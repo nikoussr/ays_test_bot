@@ -1,0 +1,50 @@
+from aiogram.filters.state import StatesGroup, State
+
+
+class register(StatesGroup):
+    wait_first_name = State()
+    wait_last_name = State()
+    wait_phone_number = State()
+    wait_job_id = State()
+    wait_cafe_id = State()
+    wait_yes_no = State()
+    wait_yes = State()
+    wait_no = State()
+
+class admin(StatesGroup):
+    wait_admin = State()
+    wait_user_FL = State()
+    wait_all_message = State()
+    wait_for_chapter = State()
+    wait_for_job_id_1 = State()
+    wait_for_job_id_2 = State()
+    wait_for_job_id_3 = State()
+    wait_for_chapter_name = State()
+    wait_for_chapter_text = State()
+    wait_yes_no = State()
+    wait_for_click_kd_1 = State()
+    wait_for_click_kd_2 = State()
+    wait_for_click_kd_3= State()
+    wait_for_click_kd_4 = State()
+    wait_for_exit = State()
+    wait_for_check_1 = State()
+    wait_for_check_2 = State()
+    wait_for_check_3 = State()
+    wait_for_check_4 = State()
+    wait_for_edit_text = State()
+    wait_for_edit_name = State()
+    wait_for_delete = State()
+    wait_for_cafe_id = State()
+    wait_for_cafe_mes = State()
+    wait_for_edit_photo = State()
+
+class user(StatesGroup):
+    wait_user = State()
+    wait_for_click_kd = State()
+    wait_for_exit = State()
+    wait_for_user_message = State()
+    """Закуп"""
+    wait_for_order = State()
+    wait_for_good_count = State()
+    wait_for_create_order = State()
+    wait_for_print_order = State()
