@@ -6,6 +6,9 @@ class Database:
         self.connection = sqlite3.connect(db_file)
         self.cursor = self.connection.cursor()
 
+
+    """Регистрация"""
+
     def add_user(self, user_id):
         """Добавляет в БД только user_id в users"""
         with self.connection:
@@ -44,8 +47,6 @@ class Database:
         """Добавляет в БД cafe_id для user_id"""
         with self.connection:
             return self.cursor.execute("UPDATE users SET cafe_id =? WHERE user_id =?", (cafe_id, user_id,))
-
-
 
     def set_kd_name(self, base_id, kd_name):
         """Добавляет в БД kd_name в kd"""
@@ -158,6 +159,34 @@ class Database:
             return self.cursor.execute(
                 "INSERT INTO kd_photos (base_id, photo) VALUES (?, ?)", (base_id, photo)
             )
+
+
+    """Folders"""
+
+    def set_folder_name(self, folder_name):
+        with self.connection:
+            return self.cursor.execute(
+                "INSERT INTO folders (folder_name) VALUES (?)", (folder_name,)
+            )
+
+    def set_kd_folder_id(self, base_id):
+        with self.connection:
+            return self.cursor.execute(
+                "UPDATE kd SET folder_id=? WHERE base_id =?", (base_id, )
+            )
+
+    def get_folder_name(self, folder_id):
+        return self.cursor.execute(
+            "SELECT folder_name FROM folders WHERE folders_id =?", (folder_id,)
+        ).fetchall()[0]
+
+
+    def get_kd_folder_id(self, cafe_id, job_id):
+        with self.connection:
+            return self.cursor.execute(
+                "SELECT folder_id FROM kd WHERE job_id =? AND cafe_id =?", (job_id, cafe_id, )
+            ).fetchall()
+
 
     def get_kd_photos(self, base_id):
         with self.connection:

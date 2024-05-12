@@ -1,5 +1,5 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from configs import JOBS, CAFES
+from configs import JOBS, all_folders
 from app.database.bd import Database
 
 db = Database('../data/ays_test_database.db')
@@ -48,18 +48,18 @@ def create_job_id_btns():
 def create_cafe_btns():
     all_cafes = []
     cafes_count = 0
-    while cafes_count < len(CAFES):
-        if len(CAFES) - cafes_count >= 2:
+    while cafes_count < len(all_folders):
+        if len(all_folders) - cafes_count >= 2:
             all_cafes.append([InlineKeyboardButton(
-                text=CAFES[cafes_count][2:] + ' ' + db.get_cnt_of_kd_cafe_id(CAFES[cafes_count][0]),
-                callback_data=CAFES[cafes_count]),
-                InlineKeyboardButton(text=CAFES[cafes_count + 1][2:] + ' ' + db.get_cnt_of_kd_cafe_id(
-                    CAFES[cafes_count + 1][0]), callback_data=CAFES[cafes_count + 1])])
+                text=all_folders[cafes_count][2:] + ' ' + db.get_cnt_of_kd_cafe_id(all_folders[cafes_count][0]),
+                callback_data=all_folders[cafes_count]),
+                InlineKeyboardButton(text=all_folders[cafes_count + 1][2:] + ' ' + db.get_cnt_of_kd_cafe_id(
+                    all_folders[cafes_count + 1][0]), callback_data=all_folders[cafes_count + 1])])
             cafes_count += 2
         else:
             all_cafes.append([InlineKeyboardButton(
-                text=CAFES[cafes_count][2:] + ' ' + db.get_cnt_of_kd_cafe_id(CAFES[cafes_count][0]),
-                callback_data=CAFES[cafes_count])])
+                text=all_folders[cafes_count][2:] + ' ' + db.get_cnt_of_kd_cafe_id(all_folders[cafes_count][0]),
+                callback_data=all_folders[cafes_count])])
             cafes_count += 1
 
     return InlineKeyboardMarkup(inline_keyboard=all_cafes)
@@ -68,14 +68,14 @@ def create_cafe_btns():
 def create_cafe_id_btns():
     all_cafes = []
     cafes_count = 0
-    while cafes_count < len(CAFES):
-        if len(CAFES) - cafes_count >= 2:
-            all_cafes.append([InlineKeyboardButton(text=CAFES[cafes_count][2:], callback_data=CAFES[cafes_count]),
-                              InlineKeyboardButton(text=CAFES[cafes_count + 1][2:],
-                                                   callback_data=CAFES[cafes_count + 1])])
+    while cafes_count < len(all_folders):
+        if len(all_folders) - cafes_count >= 2:
+            all_cafes.append([InlineKeyboardButton(text=all_folders[cafes_count][2:], callback_data=all_folders[cafes_count]),
+                              InlineKeyboardButton(text=all_folders[cafes_count + 1][2:],
+                                                   callback_data=all_folders[cafes_count + 1])])
             cafes_count += 2
         else:
-            all_cafes.append([InlineKeyboardButton(text=CAFES[cafes_count][2:], callback_data=CAFES[cafes_count])])
+            all_cafes.append([InlineKeyboardButton(text=all_folders[cafes_count][2:], callback_data=all_folders[cafes_count])])
             cafes_count += 1
 
     return InlineKeyboardMarkup(inline_keyboard=all_cafes)
@@ -84,14 +84,14 @@ def create_cafe_id_btns():
 def create_cafe_id_btns_mes():
     all_cafes = []
     cafes_count = 0
-    while cafes_count < len(CAFES):
-        if len(CAFES) - cafes_count >= 2:
-            all_cafes.append([InlineKeyboardButton(text=CAFES[cafes_count][2:], callback_data=CAFES[cafes_count]),
-                              InlineKeyboardButton(text=CAFES[cafes_count + 1][2:],
-                                                   callback_data=CAFES[cafes_count + 1])])
+    while cafes_count < len(all_folders):
+        if len(all_folders) - cafes_count >= 2:
+            all_cafes.append([InlineKeyboardButton(text=all_folders[cafes_count][2:], callback_data=all_folders[cafes_count]),
+                              InlineKeyboardButton(text=all_folders[cafes_count + 1][2:],
+                                                   callback_data=all_folders[cafes_count + 1])])
             cafes_count += 2
         else:
-            all_cafes.append([InlineKeyboardButton(text=CAFES[cafes_count][2:], callback_data=CAFES[cafes_count])])
+            all_cafes.append([InlineKeyboardButton(text=all_folders[cafes_count][2:], callback_data=all_folders[cafes_count])])
             cafes_count += 1
     all_cafes.append([InlineKeyboardButton(text="Всеобщая рассылка", callback_data='0_всех')])
 
@@ -138,10 +138,8 @@ y_n_btns = InlineKeyboardMarkup(inline_keyboard=[
 """Клавиатура для админ-панели"""
 admin_btns = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Данные сотрудника', callback_data='user_data'),
-     InlineKeyboardButton(text='Рассылка', callback_data='all_message')],
-    [InlineKeyboardButton(text='Создать БЗ', callback_data='make_a_chapter'),
-     InlineKeyboardButton(text='Список БЗ', callback_data='list_of_kd')]
-])
+     InlineKeyboardButton(text='Рассылка', callback_data='all_message')], [InlineKeyboardButton(text='Список БЗ', callback_data='list_of_kd')]])
+"""InlineKeyboardButton(text='Создать БЗ', callback_data='make_a_chapter'),"""
 
 """Клавиатура для выхода"""
 exit_btns = InlineKeyboardMarkup(inline_keyboard=[
@@ -185,6 +183,26 @@ update_chapter_btns = InlineKeyboardMarkup(inline_keyboard=[
 ])
 
 
+def create_folders_btn(all_folders):
+    folders = []
+    folders_count = 0
+    if len(all_folders) == 0:
+        folders.append([InlineKeyboardButton(text="Создать новую папку", callback_data='new_folder')])
+
+        return InlineKeyboardMarkup(inline_keyboard=folders)
+    else:
+        while folders_count < len(all_folders):
+            if len(all_folders) - folders_count >= 2:
+                folders.append([InlineKeyboardButton(text=str(all_folders[folders_count][0]), callback_data=str(all_folders[folders_count][0])),
+                                InlineKeyboardButton(text=str(all_folders[folders_count + 1][0]),
+                                                     callback_data=str(all_folders[folders_count + 1][0]))])
+                folders_count += 2
+            else:
+                folders.append([InlineKeyboardButton(text=str(all_folders[folders_count][0]), callback_data=str(all_folders[folders_count][0]))])
+                folders_count += 1
+        folders.append([InlineKeyboardButton(text="Создать новую папку", callback_data='new_folder')])
+
+        return InlineKeyboardMarkup(inline_keyboard=folders)
 def create_goods_btns(short_name, art, cafe_id):
     pages = len(art) // 10 + 1
     goods = []

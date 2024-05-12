@@ -1,6 +1,6 @@
 import asyncio
 from aiogram import Bot, Dispatcher
-from app.handlers import registration_handler, start_handler, admin_handlers,users_handler
+from app.handlers import registration_handler, start_handler, users_handler, admin_handlers
 from configs import TOKEN
 import logging
 from aiogram.fsm.storage.memory import MemoryStorage

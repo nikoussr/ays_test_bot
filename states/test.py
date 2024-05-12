@@ -19,6 +19,8 @@ class admin(StatesGroup):
     wait_for_job_id_1 = State()
     wait_for_job_id_2 = State()
     wait_for_job_id_3 = State()
+    wait_for_folder_name = State()
+    wait_for_folder = State()
     wait_for_chapter_name = State()
     wait_for_chapter_text = State()
     wait_yes_no = State()
