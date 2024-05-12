@@ -8,7 +8,7 @@ from app.database.bd import Database
 router = Router()
 mas = []
 
-db = Database('ays_test_database.db')
+db = Database('../data/ays_test_database.db')
 
 
 @router.callback_query(user.wait_user)
@@ -119,7 +119,7 @@ async def text_of_chapter(callback: CallbackQuery, state: FSMContext):
     data = callback.data.split('_')
     base_id = data[0]
     KD_name = data[1]
-    KD_text = db.get_text_of_kd(base_id, KD_name)
+    KD_text = db.get_text_of_kd(base_id)
     group_elements = []  # создаем массив групповых элементов (видева, фотоб аудио...)
     photos = db.get_kd_photos(base_id)
     if photos is not None:

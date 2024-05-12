@@ -2,7 +2,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from configs import JOBS, CAFES
 from app.database.bd import Database
 
-db = Database('ays_test_database.db')
+db = Database('../data/ays_test_database.db')
 
 """Клавиатура для работ"""
 
@@ -117,10 +117,11 @@ def make_kd_kb1(job_id, cafe_id):
     all_bases = []
     kds = []
     all_kds = db.get_all_kd(job_id, cafe_id)
+    print(all_kds)
     for kd in all_kds:
         if kd[0] is not None:
-            kds.append(str(kd[1]) + kd[0])
-            all_bases.append([InlineKeyboardButton(text=kd[0], callback_data=str(kd[1]) + '_' + kd[0])])
+            kds.append(str(kd[1]) + kd[0][:30])
+            all_bases.append([InlineKeyboardButton(text=kd[0], callback_data=str(kd[1]) + '_' + kd[0][:30])])
     # all_bases.append([InlineKeyboardButton(text='↩️', callback_data='back')])
     return InlineKeyboardMarkup(inline_keyboard=all_bases), kds
 

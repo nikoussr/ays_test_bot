@@ -9,7 +9,7 @@ from configs import JOBS, CAFES, ADMIN
 router = Router()
 mas = []
 
-db = Database('ays_test_database.db')
+db = Database('../data/ays_test_database.db')
 
 
 @router.callback_query(lambda q: q.data == 'register')

@@ -6,7 +6,7 @@ import logging
 from aiogram.fsm.storage.memory import MemoryStorage
 from app.database.bd import Database
 
-db = Database('ays_test_database.db')
+db = Database('../data/ays_test_database.db')
 
 bot = Bot(TOKEN)
 storage = MemoryStorage()

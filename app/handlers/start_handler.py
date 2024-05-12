@@ -9,7 +9,7 @@ from configs import ADMIN
 
 
 router = Router()
-db = Database('ays_test_database.db')
+db = Database('../data/ays_test_database.db')
 
 
 @router.message(Command('start'))

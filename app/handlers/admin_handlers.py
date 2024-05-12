@@ -10,7 +10,7 @@ from configs import JOBS, CAFES
 router = Router()
 mas = []
 
-db = Database('ays_test_database.db')
+db = Database('../data/ays_test_database.db')
 
 """Обработчик кнопок админ панели"""
 
@@ -37,6 +37,7 @@ async def admin_panel(callback: CallbackQuery, state: FSMContext):
 
 @router.message(admin.wait_user_FL)
 async def get_user_data(message: Message, state: FSMContext):
+    print("Ищет инфу по сотруднику")
     data = (message.text.split())
     info = db.get_user(data[1], data[0])
     await message.answer(f"Порядковый номер: {info[0]}\n"
@@ -55,6 +56,7 @@ async def get_user_data(message: Message, state: FSMContext):
 
 @router.callback_query(admin.wait_all_message)
 async def get_user_ids(callback: CallbackQuery, state: FSMContext):
+    print("Делает рассылку")
     data = callback.data.split('_')
     cafe_id = data[0]
     cafe = data[1]
@@ -128,6 +130,7 @@ async def get_user_ids(message: Message, state: FSMContext):
 @router.callback_query(
     lambda q: q.data in CAFES, admin.wait_for_cafe_id)
 async def set_cafe_id(callback: CallbackQuery, state: FSMContext):
+    print("Создаёт БЗ, выбор заведения")
     cafe_id = callback.data.split('_')  # приходит в формате "1_Бугель Вугель"
     db.set_kd_cafe_id(cafe_id[0])
     await state.update_data(wait_for_cafe_id=db.get_base_id())  # сразу добавляет в БД
@@ -139,6 +142,7 @@ async def set_cafe_id(callback: CallbackQuery, state: FSMContext):
 @router.callback_query(
     lambda q: q.data in JOBS, admin.wait_for_job_id_1)
 async def set_job_id(callback: CallbackQuery, state: FSMContext):
+    print("Создаёт БЗ, выбор должности")
     job = callback.data.split('_')  # приходит в формате "1_Менеджер"
     data = await state.get_data()
     base_id = data["wait_for_cafe_id"]
@@ -151,6 +155,7 @@ async def set_job_id(callback: CallbackQuery, state: FSMContext):
 
 @router.message(admin.wait_for_chapter_name)
 async def set_chapter_name(message: Message, state: FSMContext):
+    print("Создаёт БЗ, выбирает имя")
     schapter_name = message.text
     await bot.edit_message_text(text=f"Название для БЗ: {schapter_name}", chat_id=message.chat.id,
                                 message_id=message.message_id - 1)
@@ -161,6 +166,7 @@ async def set_chapter_name(message: Message, state: FSMContext):
 
 @router.message(admin.wait_for_chapter_text)
 async def set_chapter_text_photo(message: Message, state: FSMContext):
+    print("Создаёт БЗ, вставляет текст + фото")
     text = message.caption  # берем от пользователя текст
     if not text:
         text = message.text
@@ -203,6 +209,7 @@ async def set_chapter_text_photo(message: Message, state: FSMContext):
 
 @router.callback_query(lambda q: q.data in CAFES, admin.wait_for_job_id_2)
 async def list_of_cafes(callback: CallbackQuery, state: FSMContext):
+    print("Смотрит БЗ, выбирает заведение")
     cafe_id = callback.data.split('_')
     await state.update_data(wait_for_job_2=cafe_id[0])
     await callback.message.edit_text(f"Просмотр БЗ для {cafe_id[1]}")
@@ -212,6 +219,7 @@ async def list_of_cafes(callback: CallbackQuery, state: FSMContext):
 
 @router.callback_query(lambda q: q.data in JOBS, admin.wait_for_click_kd_3)
 async def list_of_jobs(callback: CallbackQuery, state: FSMContext):
+    print("Смотрит БЗ, выбирает должность")
     data = await state.get_data()
     cafe_id = data["wait_for_job_2"]
     job = callback.data.split('_')
@@ -225,7 +233,7 @@ async def text_of_chapter(callback: CallbackQuery, state: FSMContext):
     data = callback.data.split('_')
     base_id = data[0]
     KD_name = data[1]
-    KD_text = db.get_text_of_kd(base_id, KD_name)
+    KD_text = db.get_text_of_kd(base_id)
     await state.update_data(wait_for_click_kd_1=base_id)
     group_elements = []  # создаем массив групповых элементов (видева, фотоб аудио...)
     photos = db.get_kd_photos(base_id)
@@ -247,6 +255,7 @@ async def text_of_chapter(callback: CallbackQuery, state: FSMContext):
 
 @router.callback_query(lambda q: q.data, admin.wait_for_click_kd_2)
 async def text_of_chapterh(callback: CallbackQuery, state: FSMContext):
+    print("Редактирует БЗ, выбирает что")
     if callback.data == 'exit':
         await state.set_state(admin.wait_admin)
         # await bot.delete_message(chat_id=callback.from_user.id, message_id=callback.message.message_id)

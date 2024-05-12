@@ -127,9 +127,9 @@ class Database:
             result = self.cursor.fetchall()
             return result
 
-    def get_text_of_kd(self, base_id, KD_name):
+    def get_text_of_kd(self, base_id):
         with self.connection:
-            self.cursor.execute("SELECT KD_text from kd WHERE  base_id=? and KD_name=?", (base_id, KD_name))
+            self.cursor.execute("SELECT KD_text from kd WHERE  base_id=?", (base_id,))
             result = self.cursor.fetchall()[0][0]
             return result
 
