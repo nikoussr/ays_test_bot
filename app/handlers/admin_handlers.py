@@ -20,7 +20,7 @@ db = Database('../data/ays_test_database.db')
 async def admin_panel(callback: CallbackQuery, state: FSMContext):
     print("Вошел в админ-панель")
     if callback.data == 'all_message':
-        await callback.message.edit_text(f"Кому хотете отправить сообщение?", reply_markup=kb.create_cafe_id_btns_mes())
+        await callback.message.edit_text(f"Кому хотете отправить сообщение?", reply_markup=kb.create_cafe_id_btns_message())
         await state.set_state(admin.wait_all_message)
     elif callback.data == 'user_data':
         await callback.message.edit_text(f"Поиск сотрудника\nВведите ФИ\nНапример: Иванов Иван", reply_markup=None)

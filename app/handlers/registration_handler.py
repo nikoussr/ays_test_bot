@@ -48,7 +48,7 @@ async def third(message: Message, state: FSMContext):
     await state.set_state(register.wait_cafe_id)
     data = await state.get_data()
     db.set_phone_number(message.from_user.id, data["wait_phone_number"])
-    await message.answer(f"Где вы работаете?", reply_markup=kb.create_cafe_id_btns())
+    await message.answer(f"Где вы работаете?", reply_markup=kb.create_cafe_id_btns_register())
 
 
 
@@ -58,7 +58,7 @@ async def third(message: Message, state: FSMContext):
 async def cafes(callback: CallbackQuery, state: FSMContext):
     db.set_cafe_id(callback.from_user.id, callback.data[0])
     await callback.message.edit_text("Место работы выбрано", reply_markup=None)
-    await callback.message.answer(f"Кем вы работаете?", reply_markup=kb.create_job_id_btns())
+    await callback.message.answer(f"Кем вы работаете?", reply_markup=kb.create_job_id_btns_register())
     await state.set_state(register.wait_job_id)
 
 
