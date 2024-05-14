@@ -4,7 +4,7 @@ import app.keyboards as kb
 from states.test import register, user, admin
 from aiogram.fsm.context import FSMContext
 from app.database.bd import Database
-from configs import JOBS, all_folders, ADMIN
+from configs import JOBS, CAFES, ADMIN
 
 router = Router()
 mas = []
@@ -53,7 +53,7 @@ async def third(message: Message, state: FSMContext):
 
 
 @router.callback_query(
-    lambda q: q.data in all_folders,
+    lambda q: q.data in CAFES,
     register.wait_cafe_id)
 async def cafes(callback: CallbackQuery, state: FSMContext):
     db.set_cafe_id(callback.from_user.id, callback.data[0])

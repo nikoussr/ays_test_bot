@@ -169,6 +169,16 @@ class Database:
                 "INSERT INTO folders (folder_name) VALUES (?)", (folder_name,)
             )
 
+    def kd_create(self):
+        with self.connection:
+            return self.connection.execute(
+                "INSERT INTO kd DEFAULT VALUES"
+            )
+    def set_kd(self, cafe_id, job_id, kd_name, folder_id, kd_text):
+        with self.connection:
+            return self.cursor.execute(
+                "INSERT INTO kd (cafe_id, job_id, kd_name, kd_text, folder_id) VALUES (?, ?, ?, ?, ?)", (cafe_id, job_id, kd_name, kd_text, folder_id,)
+            )
     def set_kd_folder_id(self, base_id):
         with self.connection:
             return self.cursor.execute(
@@ -183,10 +193,24 @@ class Database:
 
     def get_kd_folder_id(self, cafe_id, job_id):
         with self.connection:
-            return self.cursor.execute(
+            result =  self.cursor.execute(
                 "SELECT folder_id FROM kd WHERE job_id =? AND cafe_id =?", (job_id, cafe_id, )
             ).fetchall()
+            print(result)
+            return result
 
+    def get_folder_id(self):
+        """Берет из БД first_name у user_id"""
+        with self.connection:
+            return self.cursor.execute("SELECT MAX(folder_id) FROM folders").fetchall()[0][0]
+
+    def get_folders(self, cafe_id, job_id):
+        with self.connection:
+            result = self.cursor.execute(
+                "SELECT DISTINCT t1.folder_id, t2.folder_name FROM kd t1 JOIN folders t2 ON t1.folder_id = t2.folder_id WHERE t1.cafe_id = ? AND t1.job_id = ?", (cafe_id, job_id,)
+            ).fetchall()
+            print(result)
+            return result
 
     def get_kd_photos(self, base_id):
         with self.connection:

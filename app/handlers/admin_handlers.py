@@ -1,3 +1,4 @@
+import aiogram.exceptions
 from aiogram.types import Message, CallbackQuery, InputMediaPhoto, InputMediaDocument
 from aiogram import Router
 import app.keyboards as kb
@@ -5,7 +6,7 @@ from states.test import admin
 from aiogram.fsm.context import FSMContext
 from app.database.bd import Database
 from main import bot
-from configs import JOBS, all_folders
+from configs import JOBS, CAFES
 
 router = Router()
 mas = []
@@ -128,12 +129,12 @@ async def get_user_ids(message: Message, state: FSMContext):
 
 
 @router.callback_query(
-    lambda q: q.data in all_folders, admin.wait_for_cafe_id)
+    lambda q: q.data in CAFES, admin.wait_for_cafe_id)
 async def set_cafe_id(callback: CallbackQuery, state: FSMContext):
     print("Создаёт БЗ, выбор заведения")
+
     cafe_id = callback.data.split('_')  # приходит в формате "1_Бугель Вугель"
-    #db.set_kd_cafe_id(cafe_id[0])  # сразу добавляет в БД
-    await state.update_data(wait_for_cafe_id=(db.get_base_id(), cafe_id))
+    await state.update_data(wait_for_cafe_id=cafe_id)
     await callback.message.edit_text(f'БЗ будет для заведения: {cafe_id[1]}')
     await callback.message.answer(f"Для кого будет БЗ?", reply_markup=kb.create_job_btns(cafe_id[0]))
     await state.set_state(admin.wait_for_job_id_1)
@@ -143,19 +144,15 @@ async def set_cafe_id(callback: CallbackQuery, state: FSMContext):
     lambda q: q.data in JOBS, admin.wait_for_job_id_1)
 async def set_job_id(callback: CallbackQuery, state: FSMContext):
     print("Создаёт БЗ, выбор должности")
+
     job_id = callback.data.split('_')  # приходит в формате "1_Менеджер"
     data = await state.get_data()
-    base_id = data["wait_for_cafe_id"][0]
-    cafe_id = data["wait_for_cafe_id"][1]
-    print(job_id[0], '\n', cafe_id[0])
-    #db.set_kd_job_id(job_id[0], base_id)
-    # await state.update_data(wait_for_job_id_1=db.get_base_id())  # сразу добавляет в БД
+    cafe_id = data["wait_for_cafe_id"]
+    await state.update_data(wait_for_job_id_1=job_id)  # сразу добавляет в БД
     await callback.message.edit_text(f'БЗ будет для должности: {job_id[1]}')
-    all_folders = db.get_kd_folder_id(cafe_id=cafe_id[0], job_id=job_id[0])
-    print(all_folders)
+    all_folders = db.get_folders(cafe_id=cafe_id[0], job_id=job_id[0])
     await callback.message.answer(f"Выберите папку или создайте новую",
-                                  reply_markup=kb.create_folders_btn(all_folders=all_folders))
-    # await callback.message.answer(f"Введите название для БЗ")
+                                  reply_markup=kb.create_folders_btn(all_folders = all_folders))
     await state.set_state(admin.wait_for_folder)
 
 
@@ -163,57 +160,94 @@ async def set_job_id(callback: CallbackQuery, state: FSMContext):
 async def create_new_folder(callback: CallbackQuery, state: FSMContext):
     if callback.data == 'new_folder':
         await callback.message.answer(f"Введите название для папки")
+        await bot.delete_message(chat_id=callback.from_user.id, message_id=callback.message.message_id)
         @router.message()
         async def new_folder_name(message: Message):
             folder_name = message.text
-            db.set_folder_name(folder_name=folder_name)
-
+            await state.update_data(wait_for_folder=folder_name)
+            await bot.edit_message_text(text=f"Папка: {folder_name}", chat_id=message.chat.id,
+                                        message_id=message.message_id - 1)
+            await callback.message.answer(f"Введите название для БЗ")
+            await state.set_state(admin.wait_for_chapter_name)
+    else:
+        data = callback.data
+        data= data.split('_')
+        folder_name = data[1]
+        await state.update_data(wait_for_folder=data)
+        await bot.edit_message_text(text=f"Папка: {folder_name}", chat_id=callback.message.chat.id,
+                                        message_id=callback.message.message_id)
+        await callback.message.answer(f"Введите название для БЗ")
+        await state.set_state(admin.wait_for_chapter_name)
 
 @router.message(admin.wait_for_chapter_name)
 async def set_chapter_name(message: Message, state: FSMContext):
     print("Создаёт БЗ, выбирает имя")
     schapter_name = message.text
-    await bot.edit_message_text(text=f"Название для БЗ: {schapter_name}", chat_id=message.chat.id,
-                                message_id=message.message_id - 1)
-    db.set_kd_name(db.get_base_id(), schapter_name)  # добавляет в БД название БЗ
+    await state.update_data(wait_for_chapter_name=schapter_name)
     await message.answer(f"Введите текст для БЗ. Можно добавить фотографии")
     await state.set_state(admin.wait_for_chapter_text)
-
 
 @router.message(admin.wait_for_chapter_text)
 async def set_chapter_text_photo(message: Message, state: FSMContext):
     print("Создаёт БЗ, вставляет текст + фото")
-    text = message.caption  # берем от пользователя текст
-    if not text:
-        text = message.text
-    photo = message.photo  # берем все фото от пользователя
-    group_elements = []  # создаем массив групповых элементов (видева, фотоб аудио...)
-    if photo is not None:  # если есть хоть одно фото, то
-        photo = photo[-1].file_id  # берем самое лучше качество через [-1]
-        input_media = InputMediaPhoto(media=photo)
-        group_elements.append(input_media)
 
-    data = await state.get_data()  # обращаемся к дате от состояний
-    base_id = data["wait_for_job_id_1"]  # берем максимальный индекс БЗ
-    if photo:
-        db.set_kd_photo(base_id, photo)  # добавляем фото в БД
-    # await message.answer_media_group(group_elements)
-    await bot.edit_message_text(text=f"Текст для БЗ: \n{text}", chat_id=message.chat.id,
-                                message_id=message.message_id - 1, reply_markup=kb.y_n_btns)
-    db.set_kd_text(db.get_base_id(), text)  # добавляет в БД текст БЗ
+    data = await state.get_data()
+    photos = data.get('photos', [])
+    captions = data.get('captions', {})
 
-    await state.clear()
+    if message.text:
+        # Если пришло только текстовое сообщение
+        await state.update_data(text=message.text)
+
+    elif message.photo:
+        # Если пришла только фотография
+        photo_id = message.photo[-1].file_id
+        photos.append(photo_id)
+
+        if len(photos) == 1:
+            caption = message.caption
+            captions[photo_id] = caption
+
+        await state.update_data(photos=photos, captions=captions)
+    try:
+        await bot.edit_message_text(text=f"Текст для БЗ: \n{message.text if message.text else message.caption}", chat_id=message.chat.id,
+                                    message_id=message.message_id - 1, reply_markup=kb.y_n_btns)
+    except aiogram.exceptions.TelegramBadRequest:
+        pass
     await state.set_state(admin.wait_yes_no)
 
     @router.callback_query(lambda q: q.data == 'yes', admin.wait_yes_no)
     async def yes(callback: CallbackQuery, state: FSMContext):
+        data = await state.get_data()
+        cafe_id = data["wait_for_cafe_id"][0]
+        job_id = data["wait_for_job_id_1"][0]
+        kd_name = data["wait_for_chapter_name"]
+        kd_text = data.get('text')
+        photos = data.get('photos', [])
+        captions = data.get('captions', {})
+        if isinstance(data["wait_for_folder"], list):
+            folder_id = data["wait_for_folder"][0]
+            db.set_kd(cafe_id, job_id, kd_name, folder_id, (kd_text if kd_text else captions.get(photos[0])))
+            base_id = db.get_base_id()
+            for photo in photos:
+                db.set_kd_photo(base_id, photo)
+        else:
+            folder_name = data["wait_for_folder"]
+            db.set_folder_name(folder_name=folder_name)
+            folder_id = db.get_folder_id()
+            db.set_kd(cafe_id, job_id, kd_name, folder_id, (kd_text if kd_text else captions.get(photos[0])))
+            base_id = db.get_base_id()
+            for photo in photos:
+                db.set_kd_photo(base_id, photo)
         await callback.message.edit_text(f'БЗ успешно сохранена', reply_markup=kb.exit_btns)
+        await state.clear()
         await state.set_state(admin.wait_for_exit)
+
 
     @router.callback_query(lambda q: q.data == 'no', admin.wait_yes_no)
     async def no(callback: CallbackQuery, state: FSMContext):
-        db.delete_kd(db.get_base_id())
         db.delete_unkd()
+        await state.clear()
         await state.set_state(admin.wait_admin)
         await callback.message.edit_text('Повторное создание БЗ...', reply_markup=None)
         await callback.message.answer(f"Для кого будет БЗ?", reply_markup=kb.create_cafe_btns())
@@ -223,7 +257,7 @@ async def set_chapter_text_photo(message: Message, state: FSMContext):
 """Просмотр БЗ"""
 
 
-@router.callback_query(lambda q: q.data in all_folders, admin.wait_for_job_id_2)
+@router.callback_query(lambda q: q.data in CAFES, admin.wait_for_job_id_2)
 async def list_of_cafes(callback: CallbackQuery, state: FSMContext):
     print("Смотрит БЗ, выбирает заведение")
     cafe_id = callback.data.split('_')
