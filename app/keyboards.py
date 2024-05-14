@@ -113,10 +113,10 @@ def make_kd_kb(job_id):
     return InlineKeyboardMarkup(inline_keyboard=all_bases), kds
 
 
-def make_kd_kb1(job_id, cafe_id):
+def make_kd_kb1(job_id, cafe_id, folder_id):
     all_bases = []
     kds = []
-    all_kds = db.get_all_kd(job_id, cafe_id)
+    all_kds = db.get_all_kd(job_id, cafe_id,folder_id)
     print(all_kds)
     for kd in all_kds:
         if kd[0] is not None:
@@ -137,9 +137,9 @@ y_n_btns = InlineKeyboardMarkup(inline_keyboard=[
 
 """Клавиатура для админ-панели"""
 admin_btns = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='Данные сотрудника', callback_data='user_data'),
-     InlineKeyboardButton(text='Рассылка', callback_data='all_message')], [InlineKeyboardButton(text='Создать БЗ', callback_data='make_a_chapter'),
-                                                                           InlineKeyboardButton(text='Список БЗ', callback_data='list_of_kd')]])
+    [InlineKeyboardButton(text='👤 Данные сотрудника', callback_data='user_data'),
+     InlineKeyboardButton(text='💬 Рассылка', callback_data='all_message')], [InlineKeyboardButton(text='✍ Создать БЗ', callback_data='make_a_chapter'),
+                                                                           InlineKeyboardButton(text='📄 Список БЗ', callback_data='list_of_kd')]])
 
 """Клавиатура для выхода"""
 exit_btns = InlineKeyboardMarkup(inline_keyboard=[
@@ -147,11 +147,11 @@ exit_btns = InlineKeyboardMarkup(inline_keyboard=[
 ])
 """Клавиатура для выхода"""
 edit_btns = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='Изменить текст', callback_data='edit_text'),
-     InlineKeyboardButton(text='Изменить название', callback_data='edit_name')],
-    [InlineKeyboardButton(text='Изменить фотографии', callback_data='edit_photo'),
-     InlineKeyboardButton(text='Удалить БЗ', callback_data='delete_kd')],
-    [InlineKeyboardButton(text='Выйти', callback_data='exit')]
+    [InlineKeyboardButton(text='🖊 Изменить текст', callback_data='edit_text'),
+     InlineKeyboardButton(text='🖊 Изменить название', callback_data='edit_name')],
+    [InlineKeyboardButton(text='🖊 Добавить фотографии', callback_data='edit_photo'),
+     InlineKeyboardButton(text='❌ Удалить БЗ', callback_data='delete_kd')],
+    [InlineKeyboardButton(text='⏪ Выйти', callback_data='exit')]
 ])
 
 """Клавиатура для назад"""
@@ -187,21 +187,38 @@ def create_folders_btn(all_folders):
     folders = []
     folders_count = 0
     if len(all_folders) == 0:
-        folders.append([InlineKeyboardButton(text="Создать новую папку", callback_data='new_folder')])
+        folders.append([InlineKeyboardButton(text="➕ Создать новую папку", callback_data='new_folder')])
 
         return InlineKeyboardMarkup(inline_keyboard=folders)
     else:
         while folders_count < len(all_folders):
             if len(all_folders) - folders_count >= 2:
-                folders.append([InlineKeyboardButton(text=str(all_folders[folders_count][1]), callback_data=str(all_folders[folders_count][0]) + '_' + str(all_folders[folders_count][1])),
-                                InlineKeyboardButton(text=str(all_folders[folders_count + 1][1]),
+                folders.append([InlineKeyboardButton(text="🗂 " + str(all_folders[folders_count][1]), callback_data=str(all_folders[folders_count][0]) + '_' + str(all_folders[folders_count][1])),
+                                InlineKeyboardButton(text="🗂 " + str(all_folders[folders_count + 1][1]),
                                                      callback_data=str(all_folders[folders_count + 1][0]) +'_' + str(all_folders[folders_count + 1][1]))])
                 folders_count += 2
             else:
-                folders.append([InlineKeyboardButton(text=str(all_folders[folders_count][1]), callback_data=str(all_folders[folders_count][0]) + '_' + str(all_folders[folders_count][1]))])
+                folders.append([InlineKeyboardButton(text="🗂 " + str(all_folders[folders_count][1]), callback_data=str(all_folders[folders_count][0]) + '_' + str(all_folders[folders_count][1]))])
                 folders_count += 1
-        folders.append([InlineKeyboardButton(text="Создать новую папку", callback_data='new_folder')])
+        folders.append([InlineKeyboardButton(text="➕ Создать новую папку", callback_data='new_folder')])
 
+        return InlineKeyboardMarkup(inline_keyboard=folders)
+
+def create_folders_btn_look(all_folders):
+    folders = []
+    folders_count = 0
+    if len(all_folders) == 0:
+        return InlineKeyboardMarkup(inline_keyboard=folders)
+    else:
+        while folders_count < len(all_folders):
+            if len(all_folders) - folders_count >= 2:
+                folders.append([InlineKeyboardButton(text="🗂 " + str(all_folders[folders_count][1]), callback_data=str(all_folders[folders_count][0]) + '_' + str(all_folders[folders_count][1])),
+                                InlineKeyboardButton(text="🗂 " + str(all_folders[folders_count + 1][1]),
+                                                     callback_data=str(all_folders[folders_count + 1][0]) +'_' + str(all_folders[folders_count + 1][1]))])
+                folders_count += 2
+            else:
+                folders.append([InlineKeyboardButton(text="🗂 " + str(all_folders[folders_count][1]), callback_data=str(all_folders[folders_count][0]) + '_' + str(all_folders[folders_count][1]))])
+                folders_count += 1
         return InlineKeyboardMarkup(inline_keyboard=folders)
 def create_goods_btns(short_name, art, cafe_id):
     pages = len(art) // 10 + 1

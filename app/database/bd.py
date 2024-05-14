@@ -114,10 +114,10 @@ class Database:
             print(result)
             return result
 
-    def get_all_kd(self, job_id, cafe_id):
+    def get_all_kd(self, job_id, cafe_id, folder_id):
         """Берет из БД все БЗ для job_id"""
         with self.connection:
-            self.cursor.execute("SELECT KD_name, base_id from kd WHERE job_id =? and cafe_id =?", (job_id, cafe_id))
+            self.cursor.execute("SELECT KD_name, base_id from kd WHERE job_id =? and cafe_id =? AND folder_id = ?", (job_id, cafe_id, folder_id))
             result = self.cursor.fetchall()
             return result
 

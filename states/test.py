@@ -28,6 +28,8 @@ class admin(StatesGroup):
     wait_for_click_kd_2 = State()
     wait_for_click_kd_3= State()
     wait_for_click_kd_4 = State()
+    wait_for_click_kd_5 = State()
+
     wait_for_exit = State()
     wait_for_check_1 = State()
     wait_for_check_2 = State()

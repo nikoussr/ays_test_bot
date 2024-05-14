@@ -273,12 +273,29 @@ async def list_of_jobs(callback: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     cafe_id = data["wait_for_job_2"]
     job = callback.data.split('_')
-    kd_btns, kds = kb.make_kd_kb1(job[0], cafe_id)
-    await callback.message.edit_text(f"Вот все БЗ для должности - {job[1]}", reply_markup=kd_btns)
+    await state.update_data(wait_for_click_kd_3=job)
+    all_folders = db.get_folders(cafe_id=cafe_id[0], job_id=job[0])
+    all_folders = kb.create_folders_btn_look(all_folders=all_folders)
+    await callback.message.answer(f"Выберите папку",
+                                  reply_markup=all_folders)
+    await callback.message.edit_text(f"Вот все папки для должности {job[1]}", reply_markup=None)
     await state.set_state(admin.wait_for_click_kd_4)
 
 
-@router.callback_query(lambda q: q.data, admin.wait_for_click_kd_4)
+@router.callback_query(admin.wait_for_click_kd_4)
+async def create_new_folder(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    cafe_id = data["wait_for_job_2"]
+    job = data["wait_for_click_kd_3"]
+    folder_id = callback.data
+    folder_id = folder_id.split('_')
+    kd_btns, kds = kb.make_kd_kb1(job[0], cafe_id, folder_id[0])
+    await callback.message.edit_text(f"Вот все БЗ в папке {folder_id[1]}", reply_markup=kd_btns)
+    await state.set_state(admin.wait_for_click_kd_5)
+
+
+
+@router.callback_query(lambda q: q.data, admin.wait_for_click_kd_5)
 async def text_of_chapter(callback: CallbackQuery, state: FSMContext):
     data = callback.data.split('_')
     base_id = data[0]
@@ -391,15 +408,13 @@ async def edit_photo(message: Message, state: FSMContext):
         db.delete_kd_photo(base_id)
     else:
         photo = message.photo  # берем все фото от пользователя
-        group_elements = []  # создаем массив групповых элементов (видева, фотоб аудио...)
         photo = photo[-1].file_id  # берем самое лучше качество через [-1]
-        input_media = InputMediaPhoto(media=photo)
-        group_elements.append(input_media)
-
         db.set_kd_photo(base_id, photo)
-        db.delete_kd_photo(base_id)
-    await bot.edit_message_text(text=f'БЗ успешно отредактирована', chat_id=message.chat.id,
+    try:
+        await bot.edit_message_text(text=f'БЗ успешно отредактирована', chat_id=message.chat.id,
                                 message_id=message.message_id - 1, reply_markup=kb.exit_btns)
+    except aiogram.exceptions.TelegramBadRequest:
+        pass
     await state.set_state(admin.wait_for_exit)
 
 
