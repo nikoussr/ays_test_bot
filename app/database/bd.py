@@ -121,6 +121,13 @@ class Database:
             self.cursor.execute("SELECT KD_text from kd WHERE  base_id=?", (base_id,))
             result = self.cursor.fetchall()[0][0]
             return result
+
+    def get_kd_name(self, base_id):
+        with self.connection:
+            self.cursor.execute("SELECT KD_name from kd WHERE  base_id=?", (base_id,))
+            result = self.cursor.fetchall()[0][0]
+            return result
+
     def get_base_id(self):
         """Берет из БД максимальный индекс base_id из kd"""
         with self.connection:
@@ -144,15 +151,28 @@ class Database:
     def get_all_kd(self, job_id, cafe_id, folder_id):
         """Берет из БД все БЗ для job_id"""
         with self.connection:
-            self.cursor.execute("SELECT KD_name, base_id from kd WHERE job_id =? and cafe_id =? AND folder_id = ?",
-                                (job_id, cafe_id, folder_id))
+            if folder_id == 0:
+                self.cursor.execute("SELECT KD_name, base_id from kd WHERE job_id =? and cafe_id =?",
+                                    (job_id, cafe_id))
+            else:
+                self.cursor.execute("SELECT KD_name, base_id from kd WHERE job_id =? and cafe_id =? AND folder_id = ?",
+                                    (job_id, cafe_id, folder_id))
             result = self.cursor.fetchall()
             return result
+
+
 
     def get_all_kd_j(self, job_id):
         """Берет из БД все БЗ для job_id"""
         with self.connection:
             self.cursor.execute("SELECT KD_name, base_id from kd WHERE job_id =?", (job_id,))
+            result = self.cursor.fetchall()
+            return result
+
+    def get_all_kd_base(self):
+        """Берет из БД все БЗ для job_id"""
+        with self.connection:
+            self.cursor.execute("SELECT KD_name, base_id from kd")
             result = self.cursor.fetchall()
             return result
 

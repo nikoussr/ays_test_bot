@@ -126,6 +126,18 @@ def make_kd_kb1(job_id, cafe_id, folder_id):
     return InlineKeyboardMarkup(inline_keyboard=all_bases)
 
 
+def make_kd_kb_base_ids(base_ids):
+    all_bases = []
+    kd_names = []
+    for base_id in base_ids:
+        kd_names.append((db.get_kd_name(base_id), base_id))
+    print(kd_names)
+    for name, id in kd_names:
+        print(name + ' ' + str(id))
+        all_bases.append([InlineKeyboardButton(text=name, callback_data=str(id))])
+    return InlineKeyboardMarkup(inline_keyboard=all_bases)
+
+
 """Клавиатуры для folders"""
 
 
@@ -264,7 +276,8 @@ admin_btns = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='👤 Данные сотрудника', callback_data='user_data'),
      InlineKeyboardButton(text='💬 Рассылка', callback_data='all_message')],
     [InlineKeyboardButton(text='✍ Создать БЗ', callback_data='make_a_chapter'),
-     InlineKeyboardButton(text='📄 Список БЗ', callback_data='list_of_kd')]])
+     InlineKeyboardButton(text='📄 Список БЗ', callback_data='list_of_kd')],
+    [InlineKeyboardButton(text='🔎 Поиск БЗ ️', callback_data='find_admin_kd')]])
 
 """Клавиатура для редактирования"""
 edit_btns = InlineKeyboardMarkup(inline_keyboard=[
@@ -282,15 +295,17 @@ exit_btns = InlineKeyboardMarkup(inline_keyboard=[
 
 """Клавиатура для сотрудника"""
 user_btns = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='📄 Список БЗ ️', callback_data='open_user_kd'),
-     InlineKeyboardButton(text='👨‍💻 Написать разработчику', callback_data='kick_me')]
+    [InlineKeyboardButton(text='🔎 Поиск БЗ ️', callback_data='find_user_kd'),
+     InlineKeyboardButton(text='📄 Список БЗ ️', callback_data='open_user_kd')],
+    [InlineKeyboardButton(text='👨‍💻 Написать разработчику', callback_data='kick_me')]
 ])
 
 """Клавиатура для менеджера"""
 user_manager_btns = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='📄 Список БЗ ️', callback_data='open_user_kd'),
-     InlineKeyboardButton(text="🛒 Закуп", callback_data="order")],
-    [InlineKeyboardButton(text='👨‍💻 Написать разработчику', callback_data='kick_me')]
+    [InlineKeyboardButton(text='🔎 Поиск БЗ ️', callback_data='find_user_kd'),
+     InlineKeyboardButton(text='📄 Список БЗ ️', callback_data='open_user_kd')],
+    [InlineKeyboardButton(text="🛒 Закуп", callback_data="order"),
+     InlineKeyboardButton(text='👨‍💻 Написать разработчику', callback_data='kick_me')]
 ])
 
 """Клавиатура для закупа"""

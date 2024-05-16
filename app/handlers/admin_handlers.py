@@ -31,6 +31,9 @@ async def admin_panel(callback: CallbackQuery, state: FSMContext):
     elif callback.data == 'list_of_kd':
         await callback.message.edit_text(f"Для кого хотите посмотреть БЗ?", reply_markup=kb.create_cafe_btns())
         await state.set_state(admin.wait_for_job_id_2)
+    elif callback.data == "find_admin_kd":
+        await callback.message.edit_text(f"Поиск БЗ по ключевому слову\nВведите слово или предложение")
+        await state.set_state(admin.wait_for_find_kd)
 
 
 """Поиск инфы по сотруднику"""
@@ -460,6 +463,24 @@ async def edit_name(message: Message, state: FSMContext):
         await callback.message.answer(
             f"Добро пожаловать в админ-панель, {db.get_first_name(user_id)} {db.get_last_name(user_id)}!",
             reply_markup=kb.admin_btns)
+
+
+@router.message(admin.wait_for_find_kd)
+async def find_kd(message: Message, state: FSMContext):
+    find_text = str(message.text)
+    all_kd = db.get_all_kd_base()
+    base_ids = []
+    for kd in all_kd:
+        text = str(db.get_kd_text(kd[1]))
+        if (find_text in text) or (find_text.lower() in text) or (find_text.upper() in text) or (find_text[0].upper() in text):
+            base_ids.append(kd[1])
+    if base_ids:
+        await message.answer(f"Выбирай", reply_markup= kb.make_kd_kb_base_ids(base_ids))
+        await state.set_state(admin.wait_for_click_kd_5)
+    else:
+        await message.answer(f"Ничего не найдено", reply_markup= kb.exit_btns)
+        await state.set_state(admin.wait_for_exit)
+
 
 
 """Выход"""

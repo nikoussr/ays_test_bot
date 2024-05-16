@@ -21,6 +21,14 @@ async def user_panel(callback: CallbackQuery, state: FSMContext):
         await callback.message.edit_text(f"Выберите папку", reply_markup=folders)
         await state.update_data(wait_user=(cafe_id, job_id))
         await state.set_state(user.wait_for_click_folder)
+    elif callback.data == "find_user_kd":
+        cafe_id = db.get_cafe_id(callback.from_user.id)
+        job_id = db.get_job_id(callback.from_user.id)
+        await callback.message.answer(f"Поиск БЗ по ключевому слову\nВведите слово или предложение")
+        await state.update_data(find_user_kd=(cafe_id, job_id))
+        await state.set_state(user.wait_for_find_kd)
+
+
     elif callback.data == "order":
         await callback.message.answer(f"Выберите действие", reply_markup=kb.manager_order_btns)
         await state.set_state(user.wait_for_order)
@@ -154,6 +162,26 @@ async def text_of_chapter(callback: CallbackQuery, state: FSMContext):
         await callback.message.answer(f"{text}")
     await callback.message.answer(f"{text}", reply_markup=kb.exit_btns)
     await state.set_state(user.wait_for_exit)
+
+
+@router.message(user.wait_for_find_kd)
+async def find_kd(message: Message, state: FSMContext):
+    find_text = str(message.text)
+    data = await state.get_data()
+    cafe_id = data["find_user_kd"][0]
+    job_id = data["find_user_kd"][1]
+    all_kd = db.get_all_kd(job_id, cafe_id, 0)
+    base_ids = []
+    for kd in all_kd:
+        text = str(db.get_kd_text(kd[1]))
+        if (find_text in text) or (find_text.lower() in text) or (find_text.upper() in text) or (find_text[0].upper() in text):
+            base_ids.append(kd[1])
+    if base_ids:
+        await message.answer(f"Выбирай", reply_markup= kb.make_kd_kb_base_ids(base_ids))
+        await state.set_state(user.wait_for_click_kd)
+    else:
+        await message.answer(f"Ничего не найдено", reply_markup= kb.exit_btns)
+        await state.set_state(user.wait_for_exit)
 
 @router.callback_query(lambda q: q.data == 'exit', user.wait_for_exit)
 async def user_data(callback: CallbackQuery, state: FSMContext):

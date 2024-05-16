@@ -16,6 +16,7 @@ class admin(StatesGroup):
     wait_admin = State()
     wait_user_FL = State()
     wait_all_message = State()
+    wait_for_find_kd = State()
     wait_for_chapter = State()
     wait_for_job_id_1 = State()
     wait_for_job_id_2 = State()
@@ -49,6 +50,7 @@ class user(StatesGroup):
     wait_for_click_kd = State()
     wait_for_exit = State()
     wait_for_user_message = State()
+    wait_for_find_kd = State()
     """Закуп"""
     wait_for_order = State()
     wait_for_good_count = State()
