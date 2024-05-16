@@ -36,20 +36,30 @@ async def first(message: Message, state: FSMContext):
 @router.message(register.wait_last_name)
 async def second(message: Message, state: FSMContext):
     await state.update_data(wait_last_name=message.text)
-    await state.set_state(register.wait_phone_number)
     data = await state.get_data()
     db.set_last_name(message.from_user.id, data["wait_last_name"])
     await message.answer(f'Введите номер телефрна в формате "89..."')
+    await state.set_state(register.wait_phone_number)
+
 
 
 @router.message(register.wait_phone_number)
 async def third(message: Message, state: FSMContext):
     await state.update_data(wait_phone_number=message.text)
-    await state.set_state(register.wait_cafe_id)
     data = await state.get_data()
     db.set_phone_number(message.from_user.id, data["wait_phone_number"])
-    await message.answer(f"Где вы работаете?", reply_markup=kb.create_cafe_id_btns_register())
+    await message.answer(f"Когда вы родились?\nФормат ввода - 01.02.2003")
+    await state.set_state(register.wait_for_date_of_birth)
 
+
+
+@router.message(register.wait_for_date_of_birth)
+async def third(message: Message, state: FSMContext):
+    await state.update_data(wait_for_date_of_birth=message.text)
+    data = await state.get_data()
+    db.set_date_of_birth(message.from_user.id, data["wait_for_date_of_birth"])
+    await message.answer(f"Где вы работаете?", reply_markup=kb.create_cafe_id_btns_register())
+    await state.set_state(register.wait_cafe_id)
 
 
 @router.callback_query(
@@ -72,7 +82,7 @@ async def jobs(callback: CallbackQuery, state: FSMContext):
     await callback.message.edit_text("Должность выбрана", reply_markup=None)
     user_info = db.get_all_info(callback.from_user.id)[0]
     await callback.message.answer(
-        f"Вас зовут - {user_info[0]} {user_info[1]}\nномер телефона - {user_info[2]}\nдолжность - {user_info[3]}\nместо работы - {user_info[4]}\nВсё верно?",
+        f"Вас зовут - {user_info[0]} {user_info[1]}\nномер телефона - {user_info[2]}\nдата раждения - {user_info[3]}\nдолжность - {user_info[4]}\nместо работы - {user_info[5]}\nВсё верно?",
         reply_markup=kb.y_n_btns)
     await state.set_state(register.wait_yes_no)
 

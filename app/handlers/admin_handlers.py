@@ -194,10 +194,15 @@ async def set_chapter_text_photo(message: Message, state: FSMContext):
     data = await state.get_data()
     photos = data.get('photos', [])
     captions = data.get('captions', {})
+    texts = data.get('texts', [])
 
+    text = ''
     if message.text:
         # Если пришло только текстовое сообщение
-        await state.update_data(text=message.text)
+        for x in range(0, len(message.text), 4000):
+            text = message.text[x:x+4000]
+            texts.append(text)
+        await state.update_data(texts=texts)
 
     elif message.photo:
         # Если пришла только фотография
@@ -210,7 +215,7 @@ async def set_chapter_text_photo(message: Message, state: FSMContext):
 
         await state.update_data(photos=photos, captions=captions)
     try:
-        await bot.edit_message_text(text=f"Текст для БЗ: \n{message.text if message.text else message.caption}", chat_id=message.chat.id,
+        await bot.edit_message_text(text=f"Правильно ли введён текст?", chat_id=message.chat.id,
                                     message_id=message.message_id - 1, reply_markup=kb.y_n_btns)
     except aiogram.exceptions.TelegramBadRequest:
         pass
@@ -222,12 +227,17 @@ async def set_chapter_text_photo(message: Message, state: FSMContext):
         cafe_id = data["wait_for_cafe_id"][0]
         job_id = data["wait_for_job_id_1"][0]
         kd_name = data["wait_for_chapter_name"]
-        kd_text = data.get('text')
+        kd_text = data.get('texts', [])
+        text = ''
+        for x in kd_text:
+            text += x
+            print(len(text))
         photos = data.get('photos', [])
         captions = data.get('captions', {})
+        print(f"Длина текста - {kd_text}")
         if isinstance(data["wait_for_folder"], list):
             folder_id = data["wait_for_folder"][0]
-            db.set_kd(cafe_id, job_id, kd_name, folder_id, (kd_text if kd_text else captions.get(photos[0])))
+            db.set_kd(cafe_id, job_id, kd_name, folder_id, (text if kd_text else captions.get(photos[0])))
             base_id = db.get_base_id()
             for photo in photos:
                 db.set_kd_photo(base_id, photo)
@@ -235,7 +245,7 @@ async def set_chapter_text_photo(message: Message, state: FSMContext):
             folder_name = data["wait_for_folder"]
             db.set_folder_name(folder_name=folder_name)
             folder_id = db.get_folder_id()
-            db.set_kd(cafe_id, job_id, kd_name, folder_id, (kd_text if kd_text else captions.get(photos[0])))
+            db.set_kd(cafe_id, job_id, kd_name, folder_id, (text if kd_text else captions.get(photos[0])))
             base_id = db.get_base_id()
             for photo in photos:
                 db.set_kd_photo(base_id, photo)
@@ -251,7 +261,7 @@ async def set_chapter_text_photo(message: Message, state: FSMContext):
         await state.set_state(admin.wait_admin)
         await callback.message.edit_text('Повторное создание БЗ...', reply_markup=None)
         await callback.message.answer(f"Для кого будет БЗ?", reply_markup=kb.create_cafe_btns())
-        await state.set_state(admin.wait_for_job_id_1)
+        await state.set_state(admin.wait_for_cafe_id)
 
 
 """Просмотр БЗ"""
@@ -289,7 +299,7 @@ async def create_new_folder(callback: CallbackQuery, state: FSMContext):
     job = data["wait_for_click_kd_3"]
     folder_id = callback.data
     folder_id = folder_id.split('_')
-    kd_btns, kds = kb.make_kd_kb1(job[0], cafe_id, folder_id[0])
+    kd_btns = kb.make_kd_kb1(job[0], cafe_id, folder_id[0])
     await callback.message.edit_text(f"Вот все БЗ в папке {folder_id[1]}", reply_markup=kd_btns)
     await state.set_state(admin.wait_for_click_kd_5)
 
@@ -297,10 +307,18 @@ async def create_new_folder(callback: CallbackQuery, state: FSMContext):
 
 @router.callback_query(lambda q: q.data, admin.wait_for_click_kd_5)
 async def text_of_chapter(callback: CallbackQuery, state: FSMContext):
+    global text
     data = callback.data.split('_')
     base_id = data[0]
-    KD_name = data[1]
-    KD_text = db.get_text_of_kd(base_id)
+    KD_text = db.get_kd_text(base_id)
+    for x in range(0, len(KD_text), 4096):
+        if len(KD_text) - x <= 4096:
+            text = KD_text[x:x + 4096]
+            break
+        text = KD_text[x:x + 4096]
+        await callback.message.answer(f"{text}")
+    await callback.message.answer(f"{text}", reply_markup = kb.edit_btns)
+
     await state.update_data(wait_for_click_kd_1=base_id)
     group_elements = []  # создаем массив групповых элементов (видева, фотоб аудио...)
     photos = db.get_kd_photos(base_id)
@@ -313,7 +331,6 @@ async def text_of_chapter(callback: CallbackQuery, state: FSMContext):
         await callback.message.answer_media_group(group_elements)  # вывод группы
     except:
         pass
-    await callback.message.answer(f"{KD_text}", reply_markup=kb.edit_btns)
     await state.set_state(admin.wait_for_click_kd_2)
 
 

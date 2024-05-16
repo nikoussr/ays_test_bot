@@ -14,14 +14,18 @@ db = Database('../data/ays_test_database.db')
 @router.callback_query(user.wait_user)
 async def user_panel(callback: CallbackQuery, state: FSMContext):
     if callback.data == 'open_user_kd':
-        kd_btns, kds = kb.make_kd_kb1(db.get_job_id(callback.from_user.id), db.get_cafe_id(callback.from_user.id))
-        await callback.message.edit_text(f"Вот все БЗ для вас", reply_markup=kd_btns)
-        await state.set_state(user.wait_for_click_kd)
+        cafe_id = db.get_cafe_id(callback.from_user.id)
+        job_id = db.get_job_id(callback.from_user.id)
+        all_folders = db.get_folders(cafe_id, job_id)
+        folders = kb.create_folders_btn_look(all_folders=all_folders)
+        await callback.message.edit_text(f"Выберите папку", reply_markup=folders)
+        await state.update_data(wait_user=(cafe_id, job_id))
+        await state.set_state(user.wait_for_click_folder)
     elif callback.data == "order":
         await callback.message.answer(f"Выберите действие", reply_markup=kb.manager_order_btns)
         await state.set_state(user.wait_for_order)
     elif callback.data == 'kick_me':
-        await callback.message.answer("Опишите свою проблему, которая у вас возникла\nСообщение сразу же увидит разработчик и примет меры")
+        await callback.message.answer("Здравствуйте! Если у вас есть какие-либо вопросы, предложения или Вы нашли баги, пожалуйста, напишите мне.\nЯ всегда готов помочь и выслушать Ваше мнение. Спасибо!")
         await state.set_state(user.wait_for_user_message)
 
 
@@ -114,12 +118,24 @@ async def send(message: Message, state: FSMContext):
     await state.set_state(user.wait_for_exit)
 
 
-@router.callback_query(lambda q: q.data, user.wait_for_click_kd)
+@router.callback_query(lambda q: q.data, user.wait_for_click_folder)
 async def text_of_chapter(callback: CallbackQuery, state: FSMContext):
     data = callback.data.split('_')
+    folder_id = data[0]
+    folder_name = data[1]
+    data = await state.get_data()
+    cafe_id = data["wait_user"][0]
+    job_id = data["wait_user"][1]
+    kd_btns = kb.make_kd_kb1(job_id, cafe_id, folder_id)
+    await callback.message.edit_text(f"Вот все БЗ в папке {folder_name}", reply_markup=kd_btns)
+    await state.set_state(user.wait_for_click_kd)
+
+
+@router.callback_query(lambda q: q.data, user.wait_for_click_kd)
+async def text_of_chapter(callback: CallbackQuery, state: FSMContext):
+    global text
+    data = callback.data.split('_')
     base_id = data[0]
-    KD_name = data[1]
-    KD_text = db.get_text_of_kd(base_id)
     group_elements = []  # создаем массив групповых элементов (видева, фотоб аудио...)
     photos = db.get_kd_photos(base_id)
     if photos is not None:
@@ -129,9 +145,15 @@ async def text_of_chapter(callback: CallbackQuery, state: FSMContext):
             group_elements.append(input_media)  # добавляем элементы
     if group_elements:
         await callback.message.answer_media_group(group_elements)  # вывод группы
-    await callback.message.answer(f"{KD_text}", reply_markup=kb.exit_btns)
+    KD_text = db.get_kd_text(base_id)
+    for x in range(0, len(KD_text), 4096):
+        if len(KD_text) - x <= 4096:
+            text = KD_text[x:x + 4096]
+            break
+        text = KD_text[x:x + 4096]
+        await callback.message.answer(f"{text}")
+    await callback.message.answer(f"{text}", reply_markup=kb.exit_btns)
     await state.set_state(user.wait_for_exit)
-
 
 @router.callback_query(lambda q: q.data == 'exit', user.wait_for_exit)
 async def user_data(callback: CallbackQuery, state: FSMContext):

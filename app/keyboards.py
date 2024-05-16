@@ -119,14 +119,11 @@ def make_kd_kb(job_id):
 
 def make_kd_kb1(job_id, cafe_id, folder_id):
     all_bases = []
-    kds = []
     all_kds = db.get_all_kd(job_id, cafe_id, folder_id)
-    print(all_kds)
     for kd in all_kds:
         if kd[0] is not None:
-            kds.append(str(kd[1]) + kd[0][:30])
             all_bases.append([InlineKeyboardButton(text=kd[0], callback_data=str(kd[1]) + '_' + kd[0][:30])])
-            return InlineKeyboardMarkup(inline_keyboard=all_bases), kds
+    return InlineKeyboardMarkup(inline_keyboard=all_bases)
 
 
 """Клавиатуры для folders"""
@@ -280,26 +277,26 @@ edit_btns = InlineKeyboardMarkup(inline_keyboard=[
 
 """Клавиатура для выхода"""
 exit_btns = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='Выйти', callback_data='exit')]
+    [InlineKeyboardButton(text='⏪ Выйти', callback_data='exit')]
 ])
 
 """Клавиатура для сотрудника"""
 user_btns = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='БЗ ️', callback_data='open_user_kd'),
-     InlineKeyboardButton(text='Написать разработчику', callback_data='kick_me')]
+    [InlineKeyboardButton(text='📄 Список БЗ ️', callback_data='open_user_kd'),
+     InlineKeyboardButton(text='👨‍💻 Написать разработчику', callback_data='kick_me')]
 ])
 
 """Клавиатура для менеджера"""
 user_manager_btns = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='БЗ ️', callback_data='open_user_kd'),
-     InlineKeyboardButton(text="Закуп", callback_data="order")],
-    [InlineKeyboardButton(text='Написать разработчику', callback_data='kick_me')]
+    [InlineKeyboardButton(text='📄 Список БЗ ️', callback_data='open_user_kd'),
+     InlineKeyboardButton(text="🛒 Закуп", callback_data="order")],
+    [InlineKeyboardButton(text='👨‍💻 Написать разработчику', callback_data='kick_me')]
 ])
 
 """Клавиатура для закупа"""
 manager_order_btns = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text="Сделать закуп", callback_data="create_order"),
-     InlineKeyboardButton(text="Редактировать позиции", callback_data="make_new_good")]
+    [InlineKeyboardButton(text="🛒 Сделать закуп", callback_data="create_order"),
+     InlineKeyboardButton(text="🖊 Редактировать позиции", callback_data="make_new_good")]
 ])
 """Клавиатура подтверждения редактирования"""
 update_chapter_btns = InlineKeyboardMarkup(inline_keyboard=[

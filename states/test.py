@@ -5,6 +5,7 @@ class register(StatesGroup):
     wait_first_name = State()
     wait_last_name = State()
     wait_phone_number = State()
+    wait_for_date_of_birth = State()
     wait_job_id = State()
     wait_cafe_id = State()
     wait_yes_no = State()
@@ -44,6 +45,7 @@ class admin(StatesGroup):
 
 class user(StatesGroup):
     wait_user = State()
+    wait_for_click_folder = State()
     wait_for_click_kd = State()
     wait_for_exit = State()
     wait_for_user_message = State()
