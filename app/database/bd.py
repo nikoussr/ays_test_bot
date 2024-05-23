@@ -85,7 +85,9 @@ class Database:
     def get_people(self, cafe_id):
         """Берет из БД last_name, first_name, user_id, job_id через cafe_id"""
         with self.connection:
-            return self.cursor.execute("SELECT last_name, first_name, user_id, job_id FROM users WHERE cafe_id=? ORDER BY job_id, last_name", (cafe_id,)).fetchall()
+            return self.cursor.execute(
+                "SELECT last_name, first_name, user_id, job_id FROM users WHERE cafe_id=? ORDER BY job_id, last_name",
+                (cafe_id,)).fetchall()
 
     def get_all_info(self, user_id):
         """Пусть пока будет"""
@@ -100,13 +102,11 @@ class Database:
         """Берет из БД всю информацию по ФИ"""
         with self.connection:
             self.cursor.execute(
-                "SELECT id, user_id, last_name, first_name, phone_number, job_name, cafe_name, date_of_reg FROM users LEFT JOIN job_titles ON users.job_id = job_titles.job_id FULL JOIN cafes ON users.cafe_id = cafes.cafe_id WHERE user_id =?",
+                "SELECT id, user_id, last_name, first_name, date_of_birth, phone_number, job_name, cafe_name, date_of_reg FROM users LEFT JOIN job_titles ON users.job_id = job_titles.job_id FULL JOIN cafes ON users.cafe_id = cafes.cafe_id WHERE user_id =?",
                 (user_id,))
             result = self.cursor.fetchall()[0]
             print(result)
             return result
-
-
 
     """Для БЗ"""
 
@@ -164,8 +164,6 @@ class Database:
             result = self.cursor.fetchall()
             return result
 
-
-
     def get_all_kd_j(self, job_id):
         """Берет из БД все БЗ для job_id"""
         with self.connection:
@@ -179,8 +177,6 @@ class Database:
             self.cursor.execute("SELECT KD_name, base_id from kd")
             result = self.cursor.fetchall()
             return result
-
-
 
     def set_kd_photo(self, base_id, photo):
         with self.connection:
@@ -361,3 +357,18 @@ class Database:
             return self.cursor.execute(
                 "SELECT art FROM goods WHERE cafe_id =?", (cafe_id,)
             ).fetchall()
+
+    """Бан лист"""
+
+    def delete_user(self, user_id):
+        with self.connection:
+            return self.cursor.execute(
+                "DELETE FROM users WHERE user_id=?", (user_id,))
+    def set_banned_user(self, user_id):
+        with self.connection:
+            return self.cursor.execute(
+                "INSERT INTO banned (user_id) VALUES (?)", (user_id,))
+    def get_banned_users(self):
+        with self.connection:
+            return self.cursor.execute(
+                "SELECT user_id FROM banned").fetchall()

@@ -61,29 +61,30 @@ async def get_user_data(callback: CallbackQuery, state: FSMContext):
     await callback.message.answer(f"Порядковый номер: {info[0]}\n"
                                   f"Tелеграм id: {info[1]}\n"
                                   f"ФИ: {info[2]} {info[3]}\n"
-                                  f"Номер телефона: {info[4]}\n"
-                                  f"Должность: {info[5]}\n"
-                                  f"Заведение: {info[6]}\n"
-                                  f"Дата регистрации: {info[7]}", reply_markup=kb.update_user_btns)
+                                  f"Дата раждения: {info[4]}\n"
+                                  f"Номер телефона: {info[5]}\n"
+                                  f"Должность: {info[6]}\n"
+                                  f"Заведение: {info[7]}\n"
+                                  f"Дата регистрации: {info[8]}", reply_markup=kb.update_user_btns)
     await state.update_data(wait_user_info=info[1])
     await state.set_state(admin.wait_for_user_update)
 
 
 @router.callback_query(admin.wait_for_user_update)
 async def choose_user_update(callback: CallbackQuery, state: FSMContext):
+    await bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id,
+                                        reply_markup=None)
     if callback.data == 'change_job_id':
-        await bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id,
-                                            reply_markup=None)
         keyboard = kb.create_job_id_btns_register()
-        #keyboard.inline_keyboard.append([InlineKeyboardButton(text='↩️ Назад', callback_data='back')])
+        # keyboard.inline_keyboard.append([InlineKeyboardButton(text='↩️ Назад', callback_data='back')])
         await callback.message.answer(f"На какую должность перевести сотрудника?", reply_markup=keyboard)
         await state.set_state(admin.wait_for_change_job_id)
 
         @router.callback_query(admin.wait_for_change_job_id)
         async def change_job_id(callback: CallbackQuery, state: FSMContext):
             if callback.data != 'back':
-
-                await bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id,
+                await bot.edit_message_reply_markup(chat_id=callback.from_user.id,
+                                                    message_id=callback.message.message_id,
                                                     reply_markup=None)
                 data = await state.get_data()
                 user_id = data["wait_user_info"]
@@ -92,19 +93,17 @@ async def choose_user_update(callback: CallbackQuery, state: FSMContext):
                 await callback.message.edit_text(f"Сотрудник будет переведен на должность {job[2:]}",
                                                  reply_markup=kb.exit_btns)
                 await state.set_state(admin.wait_for_exit)
-
     elif callback.data == 'change_cafe_id':
-        await bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id,
-                                            reply_markup=None)
         keyboard = kb.create_cafe_id_btns_register()
-        #keyboard.inline_keyboard.append([InlineKeyboardButton(text='↩️ Назад', callback_data='back')])
+        # keyboard.inline_keyboard.append([InlineKeyboardButton(text='↩️ Назад', callback_data='back')])
         await callback.message.answer(f"В какое заведение перевести сотрудника?", reply_markup=keyboard)
         await state.set_state(admin.wait_for_change_cafe_id)
 
         @router.callback_query(admin.wait_for_change_cafe_id)
         async def change_cafe_id(callback: CallbackQuery, state: FSMContext):
             if callback.data != 'back':
-                await bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id,
+                await bot.edit_message_reply_markup(chat_id=callback.from_user.id,
+                                                    message_id=callback.message.message_id,
                                                     reply_markup=None)
                 data = await state.get_data()
                 user_id = data["wait_user_info"]
@@ -117,9 +116,21 @@ async def choose_user_update(callback: CallbackQuery, state: FSMContext):
             f"Вы действительно хотите удалить сотрудника?\nПодтвердив, он навсегда исчезнет из базы данных!",
             reply_markup=kb.y_n_btns)
         await state.set_state(admin.wait_for_delete_user)
+
+        @router.callback_query(admin.wait_for_delete_user)
+        async def delete_user(callback: CallbackQuery, state: FSMContext):
+            if callback.data == "yes":
+                db.set_banned_user(callback.from_user.id)
+                db.delete_user(callback.from_user.id)
+            elif callback.data == "no":
+                await bot.delete_message(chat_id=callback.from_user.id,
+                                         message_id=callback.message.message_id)
+                user_id = callback.from_user.id
+                await callback.message.answer(
+                    f"Добро пожаловать в админ-панель, {db.get_first_name(user_id)} {db.get_last_name(user_id)}!",
+                    reply_markup=kb.admin_btns)
+                await state.set_state(admin.wait_admin)
     elif callback.data == 'back':
-        await bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id,
-                                            reply_markup=None)
         data = await state.get_data()
         cafe_id = data["wait_user_FL"][0]
         cafe = data["wait_user_FL"][1]
@@ -128,14 +139,11 @@ async def choose_user_update(callback: CallbackQuery, state: FSMContext):
         await callback.message.answer(f"Сотрудники в {cafe}", reply_markup=kb.create_job_people_btns(people))
         await state.set_state(admin.wait_user_info)
     elif callback.data == 'exit':
-        await bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id,
-                                            reply_markup=None)
         user_id = callback.from_user.id
         await callback.message.answer(
             f"Добро пожаловать в админ-панель, {db.get_first_name(user_id)} {db.get_last_name(user_id)}!",
             reply_markup=kb.admin_btns)
         await state.set_state(admin.wait_admin)
-
 
 """Рассылка"""
 
@@ -572,8 +580,6 @@ async def find_kd(message: Message, state: FSMContext):
 @router.callback_query(lambda q: q.data == 'exit', admin.wait_for_exit)
 async def user_data(callback: CallbackQuery, state: FSMContext):
     # await bot.delete_message(chat_id=callback.from_user.id, message_id=callback.message.message_id)
-    await bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id,
-                                        reply_markup=None)
     user_id = callback.from_user.id
     await callback.message.answer(
         f"Добро пожаловать в админ-панель, {db.get_first_name(user_id)} {db.get_last_name(user_id)}!",
