@@ -1,5 +1,6 @@
 import aiogram.exceptions
-from aiogram.types import Message, CallbackQuery, InputMediaPhoto, InputMediaDocument
+from aiogram.types import Message, CallbackQuery, InputMediaPhoto, InputMediaDocument, InlineKeyboardMarkup, \
+    InlineKeyboardButton
 from aiogram import Router
 import app.keyboards as kb
 from states.test import admin
@@ -20,10 +21,12 @@ db = Database('../data/ays_test_database.db')
 async def admin_panel(callback: CallbackQuery, state: FSMContext):
     print("Вошел в админ-панель")
     if callback.data == 'all_message':
-        await callback.message.edit_text(f"Кому хотете отправить сообщение?", reply_markup=kb.create_cafe_id_btns_message())
+        await callback.message.edit_text(f"Кому хотете отправить сообщение?",
+                                         reply_markup=kb.create_cafe_id_btns_message())
         await state.set_state(admin.wait_all_message)
     elif callback.data == 'user_data':
-        await callback.message.edit_text(f"Поиск сотрудника\nВведите ФИ\nНапример: Иванов Иван", reply_markup=None)
+        await callback.message.edit_text(f"Поиск сотрудника\nВыберите заведение",
+                                         reply_markup=kb.create_cafe_id_people_btns())
         await state.set_state(admin.wait_user_FL)
     elif callback.data == 'make_a_chapter':
         await callback.message.edit_text(f"Для кого будет БЗ?", reply_markup=kb.create_cafe_btns())
@@ -39,20 +42,99 @@ async def admin_panel(callback: CallbackQuery, state: FSMContext):
 """Поиск инфы по сотруднику"""
 
 
-@router.message(admin.wait_user_FL)
-async def get_user_data(message: Message, state: FSMContext):
-    print("Ищет инфу по сотруднику")
-    data = (message.text.split())
-    info = db.get_user(data[1], data[0])
-    await message.answer(f"Порядковый номер: {info[0]}\n"
-                         f"Tелеграм id: {info[1]}\n"
-                         f"ФИ: {info[3]} {info[2]}\n"
-                         f"Номер телефона: {info[4]}\n"
-                         f"Должность: {info[5]}\n"
-                         f"Заведение: {info[6]}\n")
-    await state.set_state(admin.wait_user_FL)
-    await message.answer(f"Введите ФИ сотрудника", reply_markup=kb.exit_btns)
-    await state.set_state(admin.wait_for_exit)
+@router.callback_query(admin.wait_user_FL)
+async def choose_user(callback: CallbackQuery, state: FSMContext):
+    data = callback.data.split('_')
+    cafe_id = data[0]
+    cafe = data[1]
+    await state.update_data(wait_user_FL=(cafe_id, cafe))
+    people = db.get_people(cafe_id)
+    await callback.message.edit_text(f"Сотрудники в {cafe}", reply_markup=kb.create_job_people_btns(people))
+    await state.set_state(admin.wait_user_info)
+
+
+@router.callback_query(admin.wait_user_info)
+async def get_user_data(callback: CallbackQuery, state: FSMContext):
+    await bot.delete_message(chat_id=callback.from_user.id, message_id=callback.message.message_id)
+    user_id = callback.data
+    info = db.get_user(user_id)
+    await callback.message.answer(f"Порядковый номер: {info[0]}\n"
+                                  f"Tелеграм id: {info[1]}\n"
+                                  f"ФИ: {info[2]} {info[3]}\n"
+                                  f"Номер телефона: {info[4]}\n"
+                                  f"Должность: {info[5]}\n"
+                                  f"Заведение: {info[6]}\n"
+                                  f"Дата регистрации: {info[7]}", reply_markup=kb.update_user_btns)
+    await state.update_data(wait_user_info=info[1])
+    await state.set_state(admin.wait_for_user_update)
+
+
+@router.callback_query(admin.wait_for_user_update)
+async def choose_user_update(callback: CallbackQuery, state: FSMContext):
+    if callback.data == 'change_job_id':
+        await bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id,
+                                            reply_markup=None)
+        keyboard = kb.create_job_id_btns_register()
+        #keyboard.inline_keyboard.append([InlineKeyboardButton(text='↩️ Назад', callback_data='back')])
+        await callback.message.answer(f"На какую должность перевести сотрудника?", reply_markup=keyboard)
+        await state.set_state(admin.wait_for_change_job_id)
+
+        @router.callback_query(admin.wait_for_change_job_id)
+        async def change_job_id(callback: CallbackQuery, state: FSMContext):
+            if callback.data != 'back':
+
+                await bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id,
+                                                    reply_markup=None)
+                data = await state.get_data()
+                user_id = data["wait_user_info"]
+                job = callback.data
+                db.set_job_id(user_id, job[0])
+                await callback.message.edit_text(f"Сотрудник будет переведен на должность {job[2:]}",
+                                                 reply_markup=kb.exit_btns)
+                await state.set_state(admin.wait_for_exit)
+
+    elif callback.data == 'change_cafe_id':
+        await bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id,
+                                            reply_markup=None)
+        keyboard = kb.create_cafe_id_btns_register()
+        #keyboard.inline_keyboard.append([InlineKeyboardButton(text='↩️ Назад', callback_data='back')])
+        await callback.message.answer(f"В какое заведение перевести сотрудника?", reply_markup=keyboard)
+        await state.set_state(admin.wait_for_change_cafe_id)
+
+        @router.callback_query(admin.wait_for_change_cafe_id)
+        async def change_cafe_id(callback: CallbackQuery, state: FSMContext):
+            if callback.data != 'back':
+                await bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id,
+                                                    reply_markup=None)
+                data = await state.get_data()
+                user_id = data["wait_user_info"]
+                cafe = callback.data
+                db.set_cafe_id(user_id, cafe[0])
+                await callback.message.edit_text(f"Сотрудник будет переведен в {cafe[2:]}", reply_markup=kb.exit_btns)
+                await state.set_state(admin.wait_for_exit)
+    elif callback.data == 'delete_user':
+        await callback.message.answer(
+            f"Вы действительно хотите удалить сотрудника?\nПодтвердив, он навсегда исчезнет из базы данных!",
+            reply_markup=kb.y_n_btns)
+        await state.set_state(admin.wait_for_delete_user)
+    elif callback.data == 'back':
+        await bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id,
+                                            reply_markup=None)
+        data = await state.get_data()
+        cafe_id = data["wait_user_FL"][0]
+        cafe = data["wait_user_FL"][1]
+        await state.update_data(wait_user_FL=(cafe_id, cafe))
+        people = db.get_people(cafe_id)
+        await callback.message.answer(f"Сотрудники в {cafe}", reply_markup=kb.create_job_people_btns(people))
+        await state.set_state(admin.wait_user_info)
+    elif callback.data == 'exit':
+        await bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id,
+                                            reply_markup=None)
+        user_id = callback.from_user.id
+        await callback.message.answer(
+            f"Добро пожаловать в админ-панель, {db.get_first_name(user_id)} {db.get_last_name(user_id)}!",
+            reply_markup=kb.admin_btns)
+        await state.set_state(admin.wait_admin)
 
 
 """Рассылка"""
@@ -155,7 +237,7 @@ async def set_job_id(callback: CallbackQuery, state: FSMContext):
     await callback.message.edit_text(f'БЗ будет для должности: {job_id[1]}')
     all_folders = db.get_folders(cafe_id=cafe_id[0], job_id=job_id[0])
     await callback.message.answer(f"Выберите папку или создайте новую",
-                                  reply_markup=kb.create_folders_btn(all_folders = all_folders))
+                                  reply_markup=kb.create_folders_btn(all_folders=all_folders))
     await state.set_state(admin.wait_for_folder)
 
 
@@ -164,6 +246,7 @@ async def create_new_folder(callback: CallbackQuery, state: FSMContext):
     if callback.data == 'new_folder':
         await callback.message.answer(f"Введите название для папки")
         await bot.delete_message(chat_id=callback.from_user.id, message_id=callback.message.message_id)
+
         @router.message()
         async def new_folder_name(message: Message):
             folder_name = message.text
@@ -174,13 +257,14 @@ async def create_new_folder(callback: CallbackQuery, state: FSMContext):
             await state.set_state(admin.wait_for_chapter_name)
     else:
         data = callback.data
-        data= data.split('_')
+        data = data.split('_')
         folder_name = data[1]
         await state.update_data(wait_for_folder=data)
         await bot.edit_message_text(text=f"Папка: {folder_name}", chat_id=callback.message.chat.id,
-                                        message_id=callback.message.message_id)
+                                    message_id=callback.message.message_id)
         await callback.message.answer(f"Введите название для БЗ")
         await state.set_state(admin.wait_for_chapter_name)
+
 
 @router.message(admin.wait_for_chapter_name)
 async def set_chapter_name(message: Message, state: FSMContext):
@@ -189,6 +273,7 @@ async def set_chapter_name(message: Message, state: FSMContext):
     await state.update_data(wait_for_chapter_name=schapter_name)
     await message.answer(f"Введите текст для БЗ. Можно добавить фотографии")
     await state.set_state(admin.wait_for_chapter_text)
+
 
 @router.message(admin.wait_for_chapter_text)
 async def set_chapter_text_photo(message: Message, state: FSMContext):
@@ -203,7 +288,7 @@ async def set_chapter_text_photo(message: Message, state: FSMContext):
     if message.text:
         # Если пришло только текстовое сообщение
         for x in range(0, len(message.text), 4000):
-            text = message.text[x:x+4000]
+            text = message.text[x:x + 4000]
             texts.append(text)
         await state.update_data(texts=texts)
 
@@ -256,7 +341,6 @@ async def set_chapter_text_photo(message: Message, state: FSMContext):
         await state.clear()
         await state.set_state(admin.wait_for_exit)
 
-
     @router.callback_query(lambda q: q.data == 'no', admin.wait_yes_no)
     async def no(callback: CallbackQuery, state: FSMContext):
         db.delete_unkd()
@@ -307,7 +391,6 @@ async def create_new_folder(callback: CallbackQuery, state: FSMContext):
     await state.set_state(admin.wait_for_click_kd_5)
 
 
-
 @router.callback_query(lambda q: q.data, admin.wait_for_click_kd_5)
 async def text_of_chapter(callback: CallbackQuery, state: FSMContext):
     global text
@@ -320,7 +403,7 @@ async def text_of_chapter(callback: CallbackQuery, state: FSMContext):
             break
         text = KD_text[x:x + 4096]
         await callback.message.answer(f"{text}")
-    await callback.message.answer(f"{text}", reply_markup = kb.edit_btns)
+    await callback.message.answer(f"{text}", reply_markup=kb.edit_btns)
 
     await state.update_data(wait_for_click_kd_1=base_id)
     group_elements = []  # создаем массив групповых элементов (видева, фотоб аудио...)
@@ -432,7 +515,7 @@ async def edit_photo(message: Message, state: FSMContext):
         db.set_kd_photo(base_id, photo)
     try:
         await bot.edit_message_text(text=f'БЗ успешно отредактирована', chat_id=message.chat.id,
-                                message_id=message.message_id - 1, reply_markup=kb.exit_btns)
+                                    message_id=message.message_id - 1, reply_markup=kb.exit_btns)
     except aiogram.exceptions.TelegramBadRequest:
         pass
     await state.set_state(admin.wait_for_exit)
@@ -472,15 +555,15 @@ async def find_kd(message: Message, state: FSMContext):
     base_ids = []
     for kd in all_kd:
         text = str(db.get_kd_text(kd[1]))
-        if (find_text in text) or (find_text.lower() in text) or (find_text.upper() in text) or (find_text[0].upper() in text):
+        if (find_text in text) or (find_text.lower() in text) or (find_text.upper() in text) or (
+                find_text[0].upper() in text):
             base_ids.append(kd[1])
     if base_ids:
-        await message.answer(f"Выбирай", reply_markup= kb.make_kd_kb_base_ids(base_ids))
+        await message.answer(f"Выбирай", reply_markup=kb.make_kd_kb_base_ids(base_ids))
         await state.set_state(admin.wait_for_click_kd_5)
     else:
-        await message.answer(f"Ничего не найдено", reply_markup= kb.exit_btns)
+        await message.answer(f"Ничего не найдено", reply_markup=kb.exit_btns)
         await state.set_state(admin.wait_for_exit)
-
 
 
 """Выход"""
@@ -488,7 +571,6 @@ async def find_kd(message: Message, state: FSMContext):
 
 @router.callback_query(lambda q: q.data == 'exit', admin.wait_for_exit)
 async def user_data(callback: CallbackQuery, state: FSMContext):
-    await state.set_state(admin.wait_admin)
     # await bot.delete_message(chat_id=callback.from_user.id, message_id=callback.message.message_id)
     await bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id,
                                         reply_markup=None)
@@ -496,3 +578,4 @@ async def user_data(callback: CallbackQuery, state: FSMContext):
     await callback.message.answer(
         f"Добро пожаловать в админ-панель, {db.get_first_name(user_id)} {db.get_last_name(user_id)}!",
         reply_markup=kb.admin_btns)
+    await state.set_state(admin.wait_admin)

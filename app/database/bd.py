@@ -82,6 +82,10 @@ class Database:
         with self.connection:
             return self.cursor.execute("SELECT cafe_id FROM users WHERE user_id=?", (user_id,)).fetchall()[0][0]
 
+    def get_people(self, cafe_id):
+        """Берет из БД last_name, first_name, user_id, job_id через cafe_id"""
+        with self.connection:
+            return self.cursor.execute("SELECT last_name, first_name, user_id, job_id FROM users WHERE cafe_id=? ORDER BY job_id, last_name", (cafe_id,)).fetchall()
 
     def get_all_info(self, user_id):
         """Пусть пока будет"""
@@ -92,12 +96,12 @@ class Database:
             result = self.cursor.fetchall()
             return result
 
-    def get_user(self, first_name, last_name):
+    def get_user(self, user_id):
         """Берет из БД всю информацию по ФИ"""
         with self.connection:
             self.cursor.execute(
-                "SELECT id, user_id, first_name, last_name, phone_number, job_name, cafe_name FROM users LEFT JOIN job_titles ON users.job_id = job_titles.job_id FULL JOIN cafes ON users.cafe_id = cafes.cafe_id WHERE first_name =? AND last_name =?",
-                (first_name, last_name,))
+                "SELECT id, user_id, last_name, first_name, phone_number, job_name, cafe_name, date_of_reg FROM users LEFT JOIN job_titles ON users.job_id = job_titles.job_id FULL JOIN cafes ON users.cafe_id = cafes.cafe_id WHERE user_id =?",
+                (user_id,))
             result = self.cursor.fetchall()[0]
             print(result)
             return result
@@ -277,6 +281,14 @@ class Database:
         with self.connection:
             result = self.cursor.execute(
                 "SELECT COUNT(*) FROM kd where cafe_id =?", (cafe_id)
+            )
+            result = (result.fetchall()[0][0])
+            return str(result)
+
+    def get_cnt_of_pople_cafe_id(self, cafe_id):
+        with self.connection:
+            result = self.cursor.execute(
+                "SELECT COUNT(*) FROM users where cafe_id =?", (cafe_id)
             )
             result = (result.fetchall()[0][0])
             return str(result)

@@ -15,6 +15,14 @@ class register(StatesGroup):
 class admin(StatesGroup):
     wait_admin = State()
     wait_user_FL = State()
+    wait_user_info = State()
+    wait_for_user_update = State()
+    wait_for_change_cafe_id = State()
+    wait_for_change_job_id = State()
+    wait_for_delete_user = State()
+
+
+
     wait_all_message = State()
     wait_for_find_kd = State()
     wait_for_chapter = State()
