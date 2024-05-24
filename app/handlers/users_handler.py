@@ -120,7 +120,7 @@ async def wait_for_create_orde(message: Message, state: FSMContext):
 
 @router.message(user.wait_for_user_message)
 async def send(message: Message, state: FSMContext):
-    await message.answer(f"Cообщение доставлено", reply_markup=kb.exit_btns)
+    await message.answer(f"Cообщение доставлено", reply_markup=kb.exit_user_btns)
     from main import bot
     await bot.send_message(695088267, f"Сообщение от {message.from_user.full_name}:\n{message.text}")
     await state.set_state(user.wait_for_exit)
@@ -160,7 +160,7 @@ async def text_of_chapter(callback: CallbackQuery, state: FSMContext):
             break
         text = KD_text[x:x + 4096]
         await callback.message.answer(f"{text}")
-    await callback.message.answer(f"{text}", reply_markup=kb.exit_btns)
+    await callback.message.answer(f"{text}", reply_markup=kb.exit_user_btns)
     await state.set_state(user.wait_for_exit)
 
 
@@ -180,10 +180,10 @@ async def find_kd(message: Message, state: FSMContext):
         await message.answer(f"Выбирай", reply_markup= kb.make_kd_kb_base_ids(base_ids))
         await state.set_state(user.wait_for_click_kd)
     else:
-        await message.answer(f"Ничего не найдено", reply_markup= kb.exit_btns)
+        await message.answer(f"Ничего не найдено", reply_markup= kb.exit_user_btns)
         await state.set_state(user.wait_for_exit)
 
-@router.callback_query(lambda q: q.data == 'exit', user.wait_for_exit)
+@router.callback_query(lambda q: q.data == 'exit_user', user.wait_for_exit)
 async def user_data(callback: CallbackQuery, state: FSMContext):
     await state.set_state(user.wait_user)
     await callback.message.edit_reply_markup(inline_message_id=callback.inline_message_id, reply_markup=None)

@@ -346,6 +346,9 @@ edit_btns = InlineKeyboardMarkup(inline_keyboard=[
 exit_btns = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='⏪ Выйти', callback_data='exit')]
 ])
+exit_user_btns = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='⏪ Выйти', callback_data='exit_user')]
+])
 
 """Клавиатура для сотрудника"""
 user_btns = InlineKeyboardMarkup(inline_keyboard=[
