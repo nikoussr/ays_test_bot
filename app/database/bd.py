@@ -26,7 +26,6 @@ class Database:
         """Добавляет в БД first_name для user_id"""
         with self.connection:
             return self.cursor.execute("UPDATE users SET first_name =? WHERE user_id =?", (first_name, user_id,))
-
     def get_first_name(self, user_id):
         """Берет из БД first_name у user_id"""
         with self.connection:
@@ -357,6 +356,12 @@ class Database:
             return self.cursor.execute(
                 "SELECT art FROM goods WHERE cafe_id =?", (cafe_id,)
             ).fetchall()
+
+    def insert_good(self, full_name, art, short_name, unit, cafe_id):
+        with self.connection:
+            return self.cursor.execute(
+                "INSERT INTO goods (full_name, art, short_name, unit, cafe_id) VALUES (?, ?, ?, ?, ?)", (full_name, art, short_name, unit, cafe_id, )
+            )
 
     """Бан лист"""
 

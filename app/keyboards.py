@@ -368,7 +368,10 @@ user_manager_btns = InlineKeyboardMarkup(inline_keyboard=[
 """Клавиатура для закупа"""
 manager_order_btns = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text="🛒 Сделать закуп", callback_data="create_order"),
-     InlineKeyboardButton(text="🖊 Редактировать позиции", callback_data="make_new_good")]
+     InlineKeyboardButton(text="➕ Добавить позицию", callback_data="make_new_good")],
+    [InlineKeyboardButton(text="❌ Удалить позицию", callback_data="delete_good")],
+    [InlineKeyboardButton(text="⏪ Выйти", callback_data="exit_user")]
+
 ])
 """Клавиатура подтверждения редактирования"""
 update_chapter_btns = InlineKeyboardMarkup(inline_keyboard=[
