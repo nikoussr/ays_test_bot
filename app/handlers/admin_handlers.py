@@ -160,6 +160,7 @@ async def choose_user_update(callback: CallbackQuery, state: FSMContext):
             reply_markup=kb.admin_btns)
         await state.set_state(admin.wait_admin)
 
+
 """Рассылка"""
 
 
@@ -320,14 +321,13 @@ async def set_chapter_text_photo(message: Message, state: FSMContext):
     photos = data.get('photos', [])
     captions = data.get('captions', {})
     texts = data.get('texts', [])
-
-    text = ''
     if message.text:
         # Если пришло только текстовое сообщение
         for x in range(0, len(message.text), 4000):
             text = message.text[x:x + 4000]
             texts.append(text)
         await state.update_data(texts=texts)
+        print(len(texts))
 
     elif message.photo:
         # Если пришла только фотография
@@ -337,8 +337,11 @@ async def set_chapter_text_photo(message: Message, state: FSMContext):
         if len(photos) == 1:
             caption = message.caption
             captions[photo_id] = caption
-
         await state.update_data(photos=photos, captions=captions)
+    elif message.document:
+        document_id = message.document.file_id
+        print(document_id)
+        await state.update_data(document=document_id)
     try:
         await bot.edit_message_text(text=f"Правильно ли введён текст?", chat_id=message.chat.id,
                                     message_id=message.message_id - 1, reply_markup=kb.y_n_btns)
@@ -359,21 +362,34 @@ async def set_chapter_text_photo(message: Message, state: FSMContext):
             print(len(text))
         photos = data.get('photos', [])
         captions = data.get('captions', {})
-        print(f"Длина текста - {kd_text}")
+        document = data.get('document')
         if isinstance(data["wait_for_folder"], list):
             folder_id = data["wait_for_folder"][0]
-            db.set_kd(cafe_id, job_id, kd_name, folder_id, (text if kd_text else captions.get(photos[0])))
+            if text or photos:
+                db.set_kd(cafe_id, job_id, kd_name, folder_id, (text if kd_text else captions.get(photos[0])))
+            else:
+                db.set_kd(cafe_id, job_id, kd_name, folder_id, '')
             base_id = db.get_base_id()
-            for photo in photos:
-                db.set_kd_photo(base_id, photo)
+            if photos:
+                for photo in photos:
+                    db.set_kd_photo(base_id, photo)
+            elif document:
+                db.set_kd_photo(base_id, document)
+
         else:
             folder_name = data["wait_for_folder"]
             db.set_folder_name(folder_name=folder_name)
             folder_id = db.get_folder_id()
-            db.set_kd(cafe_id, job_id, kd_name, folder_id, (text if kd_text else captions.get(photos[0])))
+            if text or photos:
+                db.set_kd(cafe_id, job_id, kd_name, folder_id, (text if kd_text else captions.get(photos[0])))
+            else:
+                db.set_kd(cafe_id, job_id, kd_name, folder_id, '')
             base_id = db.get_base_id()
-            for photo in photos:
-                db.set_kd_photo(base_id, photo)
+            if photos:
+                for photo in photos:
+                    db.set_kd_photo(base_id, photo)
+            elif document:
+                db.set_kd_photo(base_id, document)
         await callback.message.edit_text(f'БЗ успешно сохранена', reply_markup=kb.exit_btns)
         await state.clear()
 
@@ -440,27 +456,38 @@ async def text_of_chapter(callback: CallbackQuery, state: FSMContext):
     global text
     data = callback.data.split('_')
     base_id = data[0]
-    KD_text = db.get_kd_text(base_id)
-    for x in range(0, len(KD_text), 4096):
-        if len(KD_text) - x <= 4096:
-            text = KD_text[x:x + 4096]
-            break
-        text = KD_text[x:x + 4096]
-        await callback.message.answer(f"{text}")
-    await callback.message.answer(f"{text}", reply_markup=kb.edit_btns)
-
-    await state.update_data(wait_for_click_kd_1=base_id)
     group_elements = []  # создаем массив групповых элементов (видева, фотоб аудио...)
-    photos = db.get_kd_photos(base_id)
-    if photos is not None:
+    try:
+        photos = db.get_kd_photos(base_id)
         for photo in photos:  # если есть хоть одно фото, то
             element = photo[0]
             input_media = InputMediaPhoto(media=element)
             group_elements.append(input_media)  # добавляем элементы
-    try:
-        await callback.message.answer_media_group(group_elements)  # вывод группы
+        await callback.message.answer_media_group(group_elements)
     except:
-        pass
+        print("prozoshol pizdec1")
+    group_elements = []
+    try:
+        photos = db.get_kd_photos(base_id)
+        for photo in photos:  # если есть хоть одно фото, то
+            element = photo[0]
+            input_media = InputMediaDocument(media=element)
+            group_elements.append(input_media)  # добавляем элементы
+        await callback.message.answer_media_group(group_elements)
+    except:
+        print("prozoshol pizdec2")
+    try:
+        KD_text = db.get_kd_text(base_id)
+        for x in range(0, len(KD_text), 4096):
+            if len(KD_text) - x <= 4096:
+                text = KD_text[x:x + 4096]
+                break
+            text = KD_text[x:x + 4096]
+            await callback.message.answer(f"{text}")
+        await callback.message.answer(f"{text}", reply_markup=kb.edit_btns)
+    except:
+        print("prozoshol pizdec3")
+    await state.update_data(wait_for_click_kd_1=base_id)
     await state.set_state(admin.wait_for_click_kd_2)
 
 
@@ -520,16 +547,27 @@ async def text_of_chapterh(callback: CallbackQuery, state: FSMContext):
 
 @router.message(admin.wait_for_edit_text)
 async def edit_text(message: Message, state: FSMContext):
+    all_text = ''
     data = await state.get_data()
-    await state.update_data(wait_for_che=message.text)
-    await bot.edit_message_text(f"Новый текст:\n{message.text}\nВсё верно?", chat_id=message.chat.id,
+    texts = data.get('texts', [])
+    if message.text:
+        for x in range(0, len(message.text), 4090):
+            text = message.text[x:x + 4090]
+            texts.append(text)
+        await state.update_data(texts=texts)
+    await bot.edit_message_text(f"Правильно ли введён новый текст?", chat_id=message.chat.id,
                                 message_id=message.message_id - 1, reply_markup=kb.update_chapter_btns)
     await state.set_state(admin.wait_for_check_1)
 
     @router.callback_query(lambda q: q.data == 'okey', admin.wait_for_check_1)
     async def yes(callback: CallbackQuery, state: FSMContext):
         data = await state.get_data()
-        db.set_kd_text(data["wait_for_click_kd_1"], data["wait_for_che"])
+        kd_text = data.get('texts', [])
+        text = ''
+        for x in kd_text:
+            text += x
+            print(len(text))
+        db.set_kd_text(data["wait_for_click_kd_1"], text)
         await callback.message.answer(f'БЗ успешно отредактирована', reply_markup=kb.exit_btns)
         await bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id,
                                             reply_markup=None)
@@ -551,15 +589,19 @@ async def edit_photo(message: Message, state: FSMContext):
     if message.text == "0":
         db.delete_kd_photo(base_id)
     else:
-        photo = message.photo  # берем все фото от пользователя
-        photo = photo[-1].file_id  # берем самое лучше качество через [-1]
-        db.set_kd_photo(base_id, photo)
+        try:
+            photo = message.photo  # берем все фото от пользователя
+            photo = photo[-1].file_id  # берем самое лучше качество через [-1]
+            db.set_kd_photo(base_id, photo)
+        except:
+            photo = message.document  # берем все фото от пользователя
+            photo = photo.file_id  # берем самое лучше качество через [-1]
+            db.set_kd_photo(base_id, photo)
     try:
         await bot.edit_message_text(text=f'БЗ успешно отредактирована', chat_id=message.chat.id,
                                     message_id=message.message_id - 1, reply_markup=kb.exit_btns)
     except aiogram.exceptions.TelegramBadRequest:
         pass
-
 
 
 @router.message(admin.wait_for_edit_name)
@@ -594,9 +636,8 @@ async def find_kd(message: Message, state: FSMContext):
     all_kd = db.get_all_kd_base()
     base_ids = []
     for kd in all_kd:
-        text = str(db.get_kd_text(kd[1]))
-        if (find_text in text) or (find_text.lower() in text) or (find_text.upper() in text) or (
-                find_text[0].upper() in text):
+        text = str(db.get_kd_text(kd[1])).lower()
+        if (find_text.lower() in text):
             base_ids.append(kd[1])
     if base_ids:
         await message.answer(f"Выбирай", reply_markup=kb.make_kd_kb_base_ids(base_ids))

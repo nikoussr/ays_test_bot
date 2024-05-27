@@ -363,6 +363,10 @@ class Database:
                 "INSERT INTO goods (full_name, art, short_name, unit, cafe_id) VALUES (?, ?, ?, ?, ?)", (full_name, art, short_name, unit, cafe_id, )
             )
 
+    def delete_good(self, cafe_id, art):
+        with self.connection:
+            return self.cursor.execute(
+                "DELETE FROM goods WHERE cafe_id=? AND art=?", (cafe_id, art,))
     """Бан лист"""
 
     def delete_user(self, user_id):

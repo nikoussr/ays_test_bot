@@ -65,5 +65,6 @@ class user(StatesGroup):
     wait_for_create_good = State()
     wait_for_delete_good = State()
     wait_for_good_count = State()
+    wait_for_confirm_delete = State()
     wait_for_create_order = State()
     wait_for_print_order = State()
