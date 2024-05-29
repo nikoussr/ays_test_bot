@@ -1,4 +1,4 @@
-from aiogram.types import Message, CallbackQuery, InputMediaPhoto
+from aiogram.types import Message, CallbackQuery, InputMediaPhoto, InputMediaDocument
 from aiogram import Router
 import app.keyboards as kb
 from states.test import user
@@ -88,24 +88,48 @@ async def kd_in_folder(callback: CallbackQuery, state: FSMContext):
     global text
     data = callback.data.split('_')
     base_id = data[0]
-    group_elements = []  # создаем массив групповых элементов (видева, фотоб аудио...)
-    photos = db.get_kd_photos(base_id)
-    if photos is not None:
-        for photo in photos:  # если есть хоть одно фото, то
-            element = photo[0]
-            input_media = InputMediaPhoto(media=element)
-            group_elements.append(input_media)  # добавляем элементы
-    if group_elements:
-        await callback.message.answer_media_group(group_elements)  # вывод группы
-    KD_text = db.get_kd_text(base_id)
-    for x in range(0, len(KD_text), 4096):
-        if len(KD_text) - x <= 4096:
+    photos_group_elements = []  # создаем массив групповых элементов (видева, фотоб аудио...)
+    documents_group_elements = []  # создаем массив групповых элементов (видева, фотоб аудио...)
+    try:
+        files = db.get_kd_files(base_id)
+        for file in files:  # если есть хоть одно фото, то
+            element = file[0]
+            file_type = file[1]
+            if file_type == 'photo':
+                try:
+                    photos_group_elements.append(InputMediaPhoto(media=element))  # добавляем элементы
+                except:
+                    pass
+            elif file_type == 'document':
+                try:
+                    documents_group_elements.append(InputMediaDocument(media=element))  # добавляем элементы
+                except:
+                    pass
+    except:
+        print("prozoshol pizdec1")
+    try:
+        await callback.message.answer_media_group(documents_group_elements)
+    except:
+        pass
+
+    try:
+        await callback.message.answer_media_group(photos_group_elements)
+    except:
+        pass
+
+    try:
+        KD_text = db.get_kd_text(base_id)
+        for x in range(0, len(KD_text), 4096):
+            if len(KD_text) - x <= 4096:
+                text = KD_text[x:x + 4096]
+                break
             text = KD_text[x:x + 4096]
-            break
-        text = KD_text[x:x + 4096]
-        await callback.message.answer(f"{text}")
-    await callback.message.answer(f"{text}", reply_markup=kb.exit_user_btns)
+            await callback.message.answer(f"{text}")
+        await callback.message.answer(f"{text}", reply_markup=kb.exit_user_btns)
+    except:
+        await callback.message.answer(text=f"Тут пока ничего нет", reply_markup=kb.exit_user_btns)
     await state.set_state(user.wait_for_exit)
+
 
 
 """Закуп"""
@@ -264,7 +288,7 @@ async def wait_for_create_order(callback: CallbackQuery, state: FSMContext):
             data = await state.get_data()
             info = data["wait_for_good_count"]
             data_str = '\n'.join(
-                [str(index + 1) + '. ' + sublist[0] + ', арт. ' + sublist[1] + ', ' + sublist[2] + ' ' + sublist[3] + '.'
+                [str(index + 1) + '. ' + sublist[0] + ' , арт. ' + sublist[1] + ' - ' + sublist[2] + ' ' + sublist[3] + '.'
                  for
                  index, sublist in enumerate(info)])
             await callback.message.answer(data_str, reply_markup=kb.exit_user_btns)

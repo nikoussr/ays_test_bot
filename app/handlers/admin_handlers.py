@@ -196,10 +196,8 @@ async def get_user_ids(message: Message, state: FSMContext):
     group_elements = []  # создаем массив групповых элементов (видева, фотоб аудио...)
     if photo is not None:  # если есть хоть одно фото, то
         photo = photo[-1].file_id  # берем самое лучше качество через [-1]
-        input_media = InputMediaPhoto(media=photo)
-        group_elements.append(input_media)
+        group_elements.append(InputMediaPhoto(media=photo))
     if document is not None:  # если есть хоть один документ, то
-        print(document)
         document = document.file_id  # берем id файла
         input_media = InputMediaDocument(media=document)
         group_elements.append(input_media)
@@ -314,11 +312,12 @@ async def set_chapter_name(message: Message, state: FSMContext):
 
 
 @router.message(admin.wait_for_chapter_text)
-async def set_chapter_text_photo(message: Message, state: FSMContext):
+async def set_chapter_text_file(message: Message, state: FSMContext):
     print("Создаёт БЗ, вставляет текст + фото")
 
     data = await state.get_data()
     photos = data.get('photos', [])
+    documents = data.get('documents', [])
     captions = data.get('captions', {})
     texts = data.get('texts', [])
     if message.text:
@@ -327,21 +326,19 @@ async def set_chapter_text_photo(message: Message, state: FSMContext):
             text = message.text[x:x + 4000]
             texts.append(text)
         await state.update_data(texts=texts)
-        print(len(texts))
 
     elif message.photo:
         # Если пришла только фотография
         photo_id = message.photo[-1].file_id
-        photos.append(photo_id)
-
+        photos.append((photo_id, 'photo'))
         if len(photos) == 1:
             caption = message.caption
             captions[photo_id] = caption
         await state.update_data(photos=photos, captions=captions)
     elif message.document:
         document_id = message.document.file_id
-        print(document_id)
-        await state.update_data(document=document_id)
+        documents.append((document_id, 'document'))
+        await state.update_data(documents=documents)
     try:
         await bot.edit_message_text(text=f"Правильно ли введён текст?", chat_id=message.chat.id,
                                     message_id=message.message_id - 1, reply_markup=kb.y_n_btns)
@@ -355,14 +352,13 @@ async def set_chapter_text_photo(message: Message, state: FSMContext):
         cafe_id = data["wait_for_cafe_id"][0]
         job_id = data["wait_for_job_id_1"][0]
         kd_name = data["wait_for_chapter_name"]
+        photos = data.get('photos', [])
+        captions = data.get('captions', {})
+        documents = data.get('documents', [])
         kd_text = data.get('texts', [])
         text = ''
         for x in kd_text:
             text += x
-            print(len(text))
-        photos = data.get('photos', [])
-        captions = data.get('captions', {})
-        document = data.get('document')
         if isinstance(data["wait_for_folder"], list):
             folder_id = data["wait_for_folder"][0]
             if text or photos:
@@ -372,9 +368,11 @@ async def set_chapter_text_photo(message: Message, state: FSMContext):
             base_id = db.get_base_id()
             if photos:
                 for photo in photos:
-                    db.set_kd_photo(base_id, photo)
-            elif document:
-                db.set_kd_photo(base_id, document)
+                    db.set_kd_file(base_id, photo)
+            elif documents:
+                for document in documents:
+                    db.set_kd_file(base_id, document)
+
 
         else:
             folder_name = data["wait_for_folder"]
@@ -387,9 +385,10 @@ async def set_chapter_text_photo(message: Message, state: FSMContext):
             base_id = db.get_base_id()
             if photos:
                 for photo in photos:
-                    db.set_kd_photo(base_id, photo)
-            elif document:
-                db.set_kd_photo(base_id, document)
+                    db.set_kd_file(base_id, photo)
+            elif documents:
+                for document in documents:
+                    db.set_kd_file(base_id, document)
         await callback.message.edit_text(f'БЗ успешно сохранена', reply_markup=kb.exit_btns)
         await state.clear()
 
@@ -456,26 +455,37 @@ async def text_of_chapter(callback: CallbackQuery, state: FSMContext):
     global text
     data = callback.data.split('_')
     base_id = data[0]
-    group_elements = []  # создаем массив групповых элементов (видева, фотоб аудио...)
+    photos_group_elements = []  # создаем массив групповых элементов (видева, фотоб аудио...)
+    documents_group_elements = []  # создаем массив групповых элементов (видева, фотоб аудио...)
     try:
-        photos = db.get_kd_photos(base_id)
-        for photo in photos:  # если есть хоть одно фото, то
-            element = photo[0]
-            input_media = InputMediaPhoto(media=element)
-            group_elements.append(input_media)  # добавляем элементы
-        await callback.message.answer_media_group(group_elements)
+        files = db.get_kd_files(base_id)
+        for file in files:  # если есть хоть одно фото, то
+            element = file[0]
+            file_type = file[1]
+            print(element)
+            print(file_type)
+            if file_type == 'photo':
+                try:
+                    photos_group_elements.append(InputMediaPhoto(media=element))  # добавляем элементы
+                except:
+                    pass
+            elif file_type == 'document':
+                try:
+                    documents_group_elements.append(InputMediaDocument(media=element))  # добавляем элементы
+                except:
+                    pass
     except:
         print("prozoshol pizdec1")
-    group_elements = []
     try:
-        photos = db.get_kd_photos(base_id)
-        for photo in photos:  # если есть хоть одно фото, то
-            element = photo[0]
-            input_media = InputMediaDocument(media=element)
-            group_elements.append(input_media)  # добавляем элементы
-        await callback.message.answer_media_group(group_elements)
+        await callback.message.answer_media_group(documents_group_elements)
     except:
-        print("prozoshol pizdec2")
+        pass
+
+    try:
+        await callback.message.answer_media_group(photos_group_elements)
+    except:
+        pass
+
     try:
         KD_text = db.get_kd_text(base_id)
         for x in range(0, len(KD_text), 4096):
@@ -486,7 +496,7 @@ async def text_of_chapter(callback: CallbackQuery, state: FSMContext):
             await callback.message.answer(f"{text}")
         await callback.message.answer(f"{text}", reply_markup=kb.edit_btns)
     except:
-        print("prozoshol pizdec3")
+        await callback.message.answer(text=f"Что хотите отредактировать?", reply_markup=kb.edit_btns)
     await state.update_data(wait_for_click_kd_1=base_id)
     await state.set_state(admin.wait_for_click_kd_2)
 
@@ -515,11 +525,12 @@ async def text_of_chapterh(callback: CallbackQuery, state: FSMContext):
                                             reply_markup=None)
         await state.set_state(admin.wait_for_edit_name)
         await callback.message.answer(f"Введите новое название для БЗ")
-    elif callback.data == 'edit_photo':
+    elif callback.data == 'edit_file':
         await bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id,
                                             reply_markup=None)
-        await state.set_state(admin.wait_for_edit_photo)
-        await callback.message.answer(f"Отправьте новые фото. Если хотите удалить все фото, то отправьте 0")
+        await state.set_state(admin.wait_for_edit_file)
+        await callback.message.answer(
+            f"Отправьте новые фото или документы. Если хотите удалить все файлы, то отправьте 0")
     elif callback.data == 'delete_kd':
         await bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id,
                                             reply_markup=None)
@@ -582,21 +593,21 @@ async def edit_text(message: Message, state: FSMContext):
             reply_markup=kb.admin_btns)
 
 
-@router.message(admin.wait_for_edit_photo)
-async def edit_photo(message: Message, state: FSMContext):
+@router.message(admin.wait_for_edit_file)
+async def edit_file(message: Message, state: FSMContext):
     data = await state.get_data()
     base_id = data["wait_for_click_kd_1"]
     if message.text == "0":
-        db.delete_kd_photo(base_id)
+        db.delete_kd_file(base_id)
     else:
         try:
             photo = message.photo  # берем все фото от пользователя
-            photo = photo[-1].file_id  # берем самое лучше качество через [-1]
-            db.set_kd_photo(base_id, photo)
+            photo = (photo[-1].file_id, 'photo')  # берем самое лучше качество через [-1]
+            db.set_kd_file(base_id, photo)
         except:
-            photo = message.document  # берем все фото от пользователя
-            photo = photo.file_id  # берем самое лучше качество через [-1]
-            db.set_kd_photo(base_id, photo)
+            document = message.document  # берем все фото от пользователя
+            document = (document.file_id, 'document')  # берем самое лучше качество через [-1]
+            db.set_kd_file(base_id, document)
     try:
         await bot.edit_message_text(text=f'БЗ успешно отредактирована', chat_id=message.chat.id,
                                     message_id=message.message_id - 1, reply_markup=kb.exit_btns)

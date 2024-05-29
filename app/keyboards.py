@@ -337,7 +337,7 @@ admin_btns = InlineKeyboardMarkup(inline_keyboard=[
 edit_btns = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='🖊 Изменить текст', callback_data='edit_text'),
      InlineKeyboardButton(text='🖊 Изменить название', callback_data='edit_name')],
-    [InlineKeyboardButton(text='🖊 Добавить фотографии', callback_data='edit_photo'),
+    [InlineKeyboardButton(text='🖊 Добавить файлы', callback_data='edit_file'),
      InlineKeyboardButton(text='❌ Удалить БЗ', callback_data='delete_kd')],
     [InlineKeyboardButton(text='⏪ Выйти', callback_data='exit')]
 ])

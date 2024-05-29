@@ -177,10 +177,10 @@ class Database:
             result = self.cursor.fetchall()
             return result
 
-    def set_kd_photo(self, base_id, photo):
+    def set_kd_file(self, base_id, file):
         with self.connection:
             return self.cursor.execute(
-                "INSERT INTO kd_photos (base_id, photo) VALUES (?, ?)", (base_id, photo)
+                "INSERT INTO kd_files (base_id, file, file_type) VALUES (?, ?, ?)", (base_id, file[0], file[1])
             )
 
     """Folders"""
@@ -237,10 +237,10 @@ class Database:
             print(result)
             return result
 
-    def get_kd_photos(self, base_id):
+    def get_kd_files(self, base_id):
         with self.connection:
             self.cursor.execute(
-                "SELECT photo FROM kd_photos WHERE base_id =?", (base_id,)
+                "SELECT file, file_type FROM kd_files WHERE base_id =?", (base_id,)
             )
             result = self.cursor.fetchall()
             print(result)
@@ -249,7 +249,7 @@ class Database:
     def delete_unkd(self):
         with self.connection:
             return self.cursor.execute(
-                "DELETE FROM kd_photos WHERE base_id NOT IN (SELECT base_id FROM kd)"
+                "DELETE FROM kd_files WHERE base_id NOT IN (SELECT base_id FROM kd)"
             )
 
     def delete_kd(self, base_id):
@@ -258,10 +258,10 @@ class Database:
                 "DELETE FROM kd WHERE base_id=?", (base_id,)
             )
 
-    def delete_kd_photo(self, base_id):
+    def delete_kd_file(self, base_id):
         with self.connection:
             return self.cursor.execute(
-                "DELETE FROM kd_photos WHERE base_id=?", (base_id,)
+                "DELETE FROM kd_files WHERE base_id=?", (base_id,)
             )
 
     def get_cnt_of_kd_job_id(self, job_id, cafe_id):

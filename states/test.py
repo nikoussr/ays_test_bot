@@ -50,7 +50,7 @@ class admin(StatesGroup):
     wait_for_delete = State()
     wait_for_cafe_id = State()
     wait_for_cafe_mes = State()
-    wait_for_edit_photo = State()
+    wait_for_edit_file = State()
 
 class user(StatesGroup):
     wait_user = State()
