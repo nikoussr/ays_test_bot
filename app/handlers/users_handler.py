@@ -142,17 +142,18 @@ async def wait_for_action(callback: CallbackQuery, state: FSMContext):
         from main import bot
         await bot.edit_message_text(f"Закупка..", chat_id=callback.from_user.id, message_id=callback.message.message_id)
         cafe_id = db.get_cafe_id(callback.from_user.id)
+        ids = db.get_all_goods_ids(cafe_id)
         art = db.get_all_goods_art(cafe_id)
         short_name = db.get_all_goods_short_name(cafe_id)
-        keyboard = kb.create_goods_btns(short_name, art, cafe_id)
+        keyboard = kb.create_goods_btns(short_name, ids)
         await callback.message.answer(f"Выберите позицию", reply_markup=keyboard)  # клава с товарами
-        await state.update_data(wait_for_order=(art, short_name, cafe_id, 1))
+        await state.update_data(wait_for_order=(art, short_name, ids, 1))
         await state.set_state(user.wait_for_create_order)
     # Добавить позицию
     elif callback.data == "make_new_good":
         from main import bot
         await bot.edit_message_text(
-            f"Введите позицию в виде (через перенос строки):\nПолное название\nАртикул\nКороткое название\nМера измерения (шт, л, уп, ед...)\nЕсли нет артикула, то впишите туда короткое название",
+            f"Введите позицию в виде (через перенос строки):\nПолное название\nАртикул(если нет, то \"-\")\nКороткое название\nМера измерения",
             chat_id=callback.from_user.id, message_id=callback.message.message_id)
         await state.set_state(user.wait_for_create_good)
     # Удалить позицию
@@ -160,10 +161,11 @@ async def wait_for_action(callback: CallbackQuery, state: FSMContext):
         from main import bot
         await bot.delete_message(chat_id=callback.from_user.id, message_id=callback.message.message_id)
         cafe_id = db.get_cafe_id(callback.from_user.id)
+        ids = db.get_all_goods_ids(cafe_id)
         art = db.get_all_goods_art(cafe_id)
         short_name = db.get_all_goods_short_name(cafe_id)
-        await state.update_data(delete_good=(art, short_name, cafe_id, 1))
-        keyboard = kb.create_goods_btns(short_name, art, cafe_id)
+        await state.update_data(delete_good=(art, short_name, ids, 1))
+        keyboard = kb.create_goods_btns(short_name, ids)
         await callback.message.answer(f"Что удалить?", reply_markup=keyboard)  # клава с товарами
         await state.set_state(user.wait_for_delete_good)
     # Выйти
@@ -179,29 +181,29 @@ async def wait_for_action(callback: CallbackQuery, state: FSMContext):
 @router.callback_query(user.wait_for_delete_good)
 async def wait_for_delete_good(callback: CallbackQuery, state: FSMContext):
     data = await state.get_data()
-    cafe_id = data["delete_good"][2]
+    ids = data["delete_good"][2]
     short_name = data["delete_good"][1]
     art = data["delete_good"][0]
     if callback.data == "next_page":
         page = data["delete_good"][3] + 1
-        keyboard = kb.update_goods_btns(short_name, art, cafe_id, page)
+        keyboard = kb.update_goods_btns(short_name, ids, page)
         from main import bot
         await bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id,
                                             reply_markup=keyboard)
-        await state.update_data(wait_for_delete_good=(art, short_name, cafe_id, page))
+        await state.update_data(wait_for_delete_good=(art, short_name, ids, page))
         await state.set_state(user.wait_for_delete_good)
     if callback.data == "prev_page":
         page = data["wait_for_delete_good"][3] - 1
-        keyboard = kb.update_goods_btns(short_name, art, cafe_id, page)
+        keyboard = kb.update_goods_btns(short_name, ids, page)
         from main import bot
         await bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id,
                                             reply_markup=keyboard)
-        await state.update_data(wait_for_delete_good=(art, short_name, cafe_id, page))
+        await state.update_data(wait_for_delete_good=(art, short_name, ids, page))
         await state.set_state(user.wait_for_delete_good)
     elif callback.data not in ["⛔", "prev_page", "next_page", "ready"]:
         from main import bot
         c_data = callback.data
-        await bot.edit_message_text(text=f"Удалить {db.get_good_short_name(cafe_id= c_data[0], art = c_data[1:])[0][0]}, арт. {c_data[1:]}?", chat_id=callback.from_user.id,
+        await bot.edit_message_text(text=("Удалить " + db.get_good_short_name(c_data) + ("?"  if db.get_good_art(c_data) == "-" else ', арт. ' + db.get_good_art(c_data))),  chat_id=callback.from_user.id,
                                     message_id=callback.message.message_id, reply_markup=kb.y_n_btns)
         await state.update_data(wait_for_delete=c_data)
         await state.set_state(user.wait_for_confirm_delete)
@@ -218,67 +220,74 @@ async def wait_for_delete_good(callback: CallbackQuery, state: FSMContext):
 
 
 @router.callback_query(user.wait_for_confirm_delete)
-async def wait_for_create_order(callback: CallbackQuery, state: FSMContext):
+async def wait_for_confirm_delete(callback: CallbackQuery, state: FSMContext):
     if callback.data == "yes":
         data = await state.get_data()
         c_data = data["wait_for_delete"]
-        db.delete_good(c_data[0], c_data[1:])
+        db.delete_good(c_data)
         await callback.message.edit_text(f"Удалено", reply_markup=None)
         cafe_id = db.get_cafe_id(callback.from_user.id)
+        ids = db.get_all_goods_ids(cafe_id)
         art = db.get_all_goods_art(cafe_id)
         short_name = db.get_all_goods_short_name(cafe_id)
-        await state.update_data(delete_good=(art, short_name, cafe_id, 1))
-        keyboard = kb.create_goods_btns(short_name, art, cafe_id)
+        await state.update_data(delete_good=(art, short_name, ids, 1))
+        keyboard = kb.create_goods_btns(short_name, ids)
         await callback.message.answer(f"Что удалить?", reply_markup=keyboard)  # клава с товарами
         await state.set_state(user.wait_for_delete_good)
     else:
         await callback.message.edit_text(f"Не удалось удалить", reply_markup=None)
         cafe_id = db.get_cafe_id(callback.from_user.id)
+        ids = db.get_all_goods_ids(cafe_id)
         art = db.get_all_goods_art(cafe_id)
         short_name = db.get_all_goods_short_name(cafe_id)
         await state.update_data(delete_good=(art, short_name, cafe_id, 1))
-        keyboard = kb.create_goods_btns(short_name, art, cafe_id)
+        keyboard = kb.create_goods_btns(short_name, ids)
         await callback.message.answer(f"Что удалить?", reply_markup=keyboard)  # клава с товарами
         await state.set_state(user.wait_for_delete_good)
 @router.message(user.wait_for_create_good)
 async def wait_for_create_good(message: Message, state: FSMContext):
-    await message.answer(f"Позиция(-и) добавлена(-ы)", reply_markup=kb.exit_user_btns)
     cafe_id = db.get_cafe_id(message.from_user.id)
     param = message.text.splitlines()
     data = []
-    for i in range(0, len(param), 4):
-        data.append(param[i:i + 4])
-    for i in range(len(data)):
-        db.insert_good(data[i][0], data[i][1], data[i][2], data[i][3].lower().replace('.', ''), cafe_id)
+    try:
+        for i in range(0, len(param), 4):
+            data.append(param[i:i + 4])
+        for i in range(len(data)):
+            db.insert_good(data[i][0], data[i][1], data[i][2], data[i][3].lower().replace('.', ''), cafe_id)
+        await message.answer(f"Позиция(-и) добавлена(-ы)", reply_markup=kb.exit_user_btns)
+
+    except IndexError:
+        await message.answer(f"Произошла ошибка, попробуйте ещё раз", reply_markup=kb.exit_user_btns)
 
 
 @router.callback_query(user.wait_for_create_order)
 async def wait_for_create_order(callback: CallbackQuery, state: FSMContext):
     data = await state.get_data()
-    cafe_id = data["wait_for_order"][2]
+    page = data["wait_for_order"][3]
+    ids = data["wait_for_order"][2]
     short_name = data["wait_for_order"][1]
     art = data["wait_for_order"][0]
     if callback.data == "next_page":
-        page = data["wait_for_order"][3] + 1
-        keyboard = kb.update_goods_btns(short_name, art, cafe_id, page)
+        page = page + 1
+        keyboard = kb.update_goods_btns(short_name, ids, page)
         from main import bot
         await bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id,
                                             reply_markup=keyboard)
-        await state.update_data(wait_for_order=(art, short_name, cafe_id, page))
+        await state.update_data(wait_for_order=(art, short_name, ids, page))
         await state.set_state(user.wait_for_create_order)
     if callback.data == "prev_page":
         page = data["wait_for_order"][3] - 1
-        keyboard = kb.update_goods_btns(short_name, art, cafe_id, page)
+        keyboard = kb.update_goods_btns(short_name, ids, page)
         from main import bot
         await bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id,
                                             reply_markup=keyboard)
-        await state.update_data(wait_for_order=(art, short_name, cafe_id, page))
+        await state.update_data(wait_for_order=(art, short_name, ids, page))
         await state.set_state(user.wait_for_create_order)
     elif callback.data not in ["⛔", "prev_page", "next_page", "ready"]:
         from main import bot
         await bot.delete_message(chat_id=callback.from_user.id, message_id=callback.message.message_id)
         c_data = callback.data
-        await state.update_data(wait_for_create_order=(c_data[0], c_data[1:]))
+        await state.update_data(wait_for_create_order=c_data)
         await callback.message.answer(f"Сколько штук?")
         await state.set_state(user.wait_for_good_count)
     elif callback.data == "ready":
@@ -288,7 +297,7 @@ async def wait_for_create_order(callback: CallbackQuery, state: FSMContext):
             data = await state.get_data()
             info = data["wait_for_good_count"]
             data_str = '\n'.join(
-                [str(index + 1) + '. ' + sublist[0] + ' , арт. ' + sublist[1] + ' - ' + sublist[2] + ' ' + sublist[3] + '.'
+                [str(index + 1) + '. ' + sublist[0] + ("" if sublist[1] == "-" else ', арт. ' + sublist[1]) + ' - ' + sublist[2] + ' ' + sublist[3] + '.'
                  for
                  index, sublist in enumerate(info)])
             await callback.message.answer(data_str, reply_markup=kb.exit_user_btns)
@@ -306,26 +315,25 @@ async def wait_for_create_order(callback: CallbackQuery, state: FSMContext):
 async def wait_for_good_count(message: Message, state: FSMContext):
     count = message.text
     data = await state.get_data()
-    cafe_id, art = data["wait_for_create_order"][0], data["wait_for_create_order"][1]
-    full_name = db.get_good_full_name(art, cafe_id)
-    unit = db.get_good_unit(art, cafe_id)
+    id = data["wait_for_create_order"]
+    full_name = db.get_good_full_name(id)
+    unit = db.get_good_unit(id)
+    art = db.get_good_art(id)
     try:
         spisok = data["wait_for_good_count"]
         spisok.append([full_name, art, count, unit])
-        print(spisok)
         await state.update_data(wait_for_good_count=spisok)
     except:
         spisok = []
         spisok.append([full_name, art, count, unit])
-        print(spisok)
         await state.update_data(wait_for_good_count=spisok)
-
-    cafe_id = db.get_cafe_id(message.from_user.id)
-    art = db.get_all_goods_art(cafe_id)
-    short_name = db.get_all_goods_short_name(cafe_id)
-    keyboard = kb.create_goods_btns(short_name, art, cafe_id)
+    ids = data["wait_for_order"][2]
+    short_name = data["wait_for_order"][1]
+    art = data["wait_for_order"][0]
+    page = data["wait_for_order"][3]
+    keyboard = kb.update_goods_btns(short_name, ids, page)
     await message.answer(f"Выберите позицию", reply_markup=keyboard)  # клава с товарами
-    await state.update_data(wait_for_order=(art, short_name, cafe_id, 1))
+    await state.update_data(wait_for_order=(art, short_name, ids, page))
     await state.set_state(user.wait_for_create_order)
 
 """Написать разработчику"""

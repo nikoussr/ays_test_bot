@@ -191,11 +191,6 @@ class Database:
                 "INSERT INTO folders (folder_name) VALUES (?)", (folder_name,)
             )
 
-    def kd_create(self):
-        with self.connection:
-            return self.connection.execute(
-                "INSERT INTO kd DEFAULT VALUES"
-            )
 
     def set_kd(self, cafe_id, job_id, kd_name, folder_id, kd_text):
         with self.connection:
@@ -204,24 +199,6 @@ class Database:
                 (cafe_id, job_id, kd_name, kd_text, folder_id,)
             )
 
-    def set_kd_folder_id(self, base_id):
-        with self.connection:
-            return self.cursor.execute(
-                "UPDATE kd SET folder_id=? WHERE base_id =?", (base_id,)
-            )
-
-    def get_folder_name(self, folder_id):
-        return self.cursor.execute(
-            "SELECT folder_name FROM folders WHERE folders_id =?", (folder_id,)
-        ).fetchall()[0]
-
-    def get_kd_folder_id(self, cafe_id, job_id):
-        with self.connection:
-            result = self.cursor.execute(
-                "SELECT folder_id FROM kd WHERE job_id =? AND cafe_id =?", (job_id, cafe_id,)
-            ).fetchall()
-            print(result)
-            return result
 
     def get_folder_id(self):
         """Берет из БД first_name у user_id"""
@@ -234,7 +211,6 @@ class Database:
                 "SELECT DISTINCT t1.folder_id, t2.folder_name FROM kd t1 JOIN folders t2 ON t1.folder_id = t2.folder_id WHERE t1.cafe_id = ? AND t1.job_id = ?",
                 (cafe_id, job_id,)
             ).fetchall()
-            print(result)
             return result
 
     def get_kd_files(self, base_id):
@@ -243,7 +219,6 @@ class Database:
                 "SELECT file, file_type FROM kd_files WHERE base_id =?", (base_id,)
             )
             result = self.cursor.fetchall()
-            print(result)
             return result
 
     def delete_unkd(self):
@@ -290,58 +265,28 @@ class Database:
 
     """goods"""
 
-    def set_good_art(self, art):
+    def get_good_full_name(self, id):
         with self.connection:
             return self.cursor.execute(
-                "INSERT INTO goods (art) VALUES (?)", (art,)
-            )
-
-    def set_good_cafe_id(self, art, cafe_id):
-        with self.connection:
-            return self.cursor.execute(
-                "UPDATE goods SET cafe_id=? WHERE art =?", (cafe_id, art)
-            )
-
-    def set_good_full_name(self, art, full_name):
-        with self.connection:
-            return self.cursor.execute(
-                "UPDATE goods SET full_name=? WHERE art =?", (full_name, art)
-            )
-
-    def set_good_short_name(self, art, short_name):
-        with self.connection:
-            return self.cursor.execute(
-                "UPDATE goods SET short_name=? WHERE art =?", (short_name, art)
-            )
-
-    def set_good_unit(self, art, unit):
-        with self.connection:
-            return self.cursor.execute(
-                "UPDATE goods SET unit=? WHERE art =?", (unit, art)
-            )
-
-    def get_good_art(self, art):
-        with self.connection:
-            return self.cursor.execute(
-                "INSERT INTO goods (art) VALUES (?)", (art,)
-            ).fetchall()
-
-    def get_good_full_name(self, art, cafe_id):
-        with self.connection:
-            return self.cursor.execute(
-                "SELECT full_name from goods WHERE  art=? and cafe_id=?", (art, cafe_id,)
+                "SELECT full_name from goods WHERE id=?", (id,)
             ).fetchall()[0][0]
 
-    def get_good_short_name(self, art, cafe_id):
+    def get_good_art(self,id):
         with self.connection:
             return self.cursor.execute(
-                "SELECT short_name from goods WHERE  art=? and cafe_id=?", (art, cafe_id,)
-            ).fetchall()
+                "SELECT art from goods WHERE  id=?", (id,)
+            ).fetchall()[0][0]
 
-    def get_good_unit(self, art, cafe_id):
+    def get_good_short_name(self, id):
         with self.connection:
             return self.cursor.execute(
-                "SELECT unit from goods WHERE  art=? and cafe_id=?", (art, cafe_id,)
+                "SELECT short_name from goods WHERE  id=?", (id,)
+            ).fetchall()[0][0]
+
+    def get_good_unit(self, id):
+        with self.connection:
+            return self.cursor.execute(
+                "SELECT unit from goods WHERE  id=?", (id,)
 
             ).fetchall()[0][0]
 
@@ -363,10 +308,17 @@ class Database:
                 "INSERT INTO goods (full_name, art, short_name, unit, cafe_id) VALUES (?, ?, ?, ?, ?)", (full_name, art, short_name, unit, cafe_id, )
             )
 
-    def delete_good(self, cafe_id, art):
+    def delete_good(self, id):
         with self.connection:
             return self.cursor.execute(
-                "DELETE FROM goods WHERE cafe_id=? AND art=?", (cafe_id, art,))
+                "DELETE FROM goods WHERE id=?", (id,)
+            )
+
+    def get_all_goods_ids(self, cafe_id):
+        with self.connection:
+            return self.cursor.execute(
+                "SELECT id FROM goods WHERE cafe_id =?", (cafe_id,)
+            ).fetchall()
     """Бан лист"""
 
     def delete_user(self, user_id):

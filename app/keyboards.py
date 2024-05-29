@@ -100,7 +100,7 @@ def create_cafe_id_btns_message():
             cafes_count += 1
     all_cafes.append([InlineKeyboardButton(text="Всеобщая рассылка", callback_data='0_всех')])
 
-    return InlineKeyboardMarkup(inline_keyboard=all_cafes)
+    return InlineKeyboardMarkup(inline_keyboard=all_cafes, )
 
 
 """Клавиатура для баз знаний"""
@@ -196,8 +196,8 @@ def create_folders_btn_look(all_folders):
 """Клавиатура с товарами"""
 
 
-def create_goods_btns(short_name, art, cafe_id):
-    pages = len(art) // 10 + 1
+def create_goods_btns(short_name, id):
+    pages = len(id) // 10 + 1
     goods = []
     if pages > 1:
         goods.append(
@@ -205,59 +205,69 @@ def create_goods_btns(short_name, art, cafe_id):
              InlineKeyboardButton(text=">>", callback_data="next_page")])
         index = 0
         while index < 10:
+            text = short_name[index][0]
+            cal = str(id[index][0])
             goods.append(
-                [InlineKeyboardButton(text=short_name[index][0], callback_data=str(cafe_id) + str(art[index][0]))])
+                [InlineKeyboardButton(text=text, callback_data=cal)])
             index += 1
     else:
         index = 0
-        while index < len(art):
+        while index < len(id):
+            text = short_name[index][0]
+            cal = str(id[index][0])
             goods.append(
-                [InlineKeyboardButton(text=short_name[index][0], callback_data=str(cafe_id) + str(art[index][0]))])
+                [InlineKeyboardButton(text=text, callback_data=cal)])
             index += 1
-    goods.append([InlineKeyboardButton(text="Готово", callback_data="ready")])
+    goods.append([InlineKeyboardButton(text="Сформировать ⏩", callback_data="ready")])
     return InlineKeyboardMarkup(inline_keyboard=goods)
 
 
-"""Клавиатура с одновлёнными товарами"""
+"""Клавиатура с обновлёнными товарами"""
 
 
-def update_goods_btns(short_name, art, cafe_id, page):
+def update_goods_btns(short_name, ids, page):
     goods = []
-    if (len(art) // 10 + 1 - page) == 0 and page > 1:
+    if (len(ids) // 10 + 1 - page) == 0 and page > 1:
         goods.append([InlineKeyboardButton(text="<<", callback_data='prev_page'),
                       InlineKeyboardButton(text=str(page), callback_data="⛔"),
                       InlineKeyboardButton(text="⛔", callback_data="⛔")])
-        short_name = short_name[(page - 1) * 9 + 1:page * 10]
-        art = art[(page - 1) * 9 + 1:page * 10]
+        short_name = short_name[(page - 1) * 10:page * 10]
+        ids = ids[(page - 1) * 10:page * 10]
         index = 0
-        while index < len(art):
+        while index < len(ids):
+            text = short_name[index][0]
+            cal = str(ids[index][0])
             goods.append(
-                [InlineKeyboardButton(text=short_name[index][0], callback_data=str(cafe_id) + str(art[index][0]))])
+                [InlineKeyboardButton(text=text, callback_data=cal)])
             index += 1
     elif page == 1:
         goods.append(
             [InlineKeyboardButton(text="⛔", callback_data='⛔'), InlineKeyboardButton(text=str(page), callback_data="⛔"),
              InlineKeyboardButton(text=">>", callback_data="next_page")])
         short_name = short_name[:page * 10]
-        art = art[:page * 10]
+        ids = ids[:page * 10]
         index = 0
-        while index < len(art):
+        while index < len(ids):
+            text = short_name[index][0]
+            cal = str(ids[index][0])
             goods.append(
-                [InlineKeyboardButton(text=short_name[index][0], callback_data=str(cafe_id) + str(art[index][0]))])
+                [InlineKeyboardButton(text=text, callback_data=cal)])
             index += 1
     else:
         goods.append(
             [InlineKeyboardButton(text="<<", callback_data='prev_page'),
              InlineKeyboardButton(text=str(page), callback_data="⛔"),
              InlineKeyboardButton(text=">>", callback_data="next_page")])
-        short_name = short_name[(page - 1) * 9 + 1:page * 10]
-        art = art[(page - 1) * 9 + 1:page * 10]
+        short_name = short_name[(page - 1) * 10:page * 10]
+        ids = ids[(page - 1) * 10:page * 10]
         index = 0
-        while index < len(art):
+        while index < len(ids):
+            text = short_name[index][0]
+            cal = str(ids[index][0])
             goods.append(
-                [InlineKeyboardButton(text=short_name[index][0], callback_data=str(cafe_id) + str(art[index][0]))])
+                [InlineKeyboardButton(text=text, callback_data=cal)])
             index += 1
-    goods.append([InlineKeyboardButton(text="Готово", callback_data="ready")])
+    goods.append([InlineKeyboardButton(text="Сформировать ⏩", callback_data="ready")])
     return InlineKeyboardMarkup(inline_keyboard=goods)
 
 

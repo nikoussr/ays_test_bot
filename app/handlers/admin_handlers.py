@@ -19,32 +19,32 @@ db = Database('../data/ays_test_database.db')
 
 @router.callback_query(admin.wait_admin)
 async def admin_panel(callback: CallbackQuery, state: FSMContext):
-    print("Вошел в админ-панель")
     if callback.data == 'all_message':
         keyboard = kb.create_cafe_id_btns_message()
         keyboard.inline_keyboard.append([InlineKeyboardButton(text='⏪ Выйти', callback_data='exit')])
-        await callback.message.edit_text(f"Кому хотете отправить сообщение?",
-                                         reply_markup=keyboard)
+        await callback.message.edit_text("Кому хотете отправить сообщение?", reply_markup=keyboard)
         await state.set_state(admin.wait_all_message)
+
     elif callback.data == 'user_data':
         keyboard = kb.create_cafe_id_people_btns()
         keyboard.inline_keyboard.append([InlineKeyboardButton(text='⏪ Выйти', callback_data='exit')])
-
-        await callback.message.edit_text(f"Поиск сотрудника\nВыберите заведение",
-                                         reply_markup=keyboard)
+        await callback.message.edit_text("Поиск сотрудника\nВыберите заведение", reply_markup=keyboard)
         await state.set_state(admin.wait_user_FL)
+
     elif callback.data == 'make_a_chapter':
         keyboard = kb.create_cafe_btns()
         keyboard.inline_keyboard.append([InlineKeyboardButton(text='⏪ Выйти', callback_data='exit')])
-        await callback.message.edit_text(f"Для кого будет БЗ?", reply_markup=keyboard)
+        await callback.message.edit_text("Для кого будет БЗ?", reply_markup=keyboard)
         await state.set_state(admin.wait_for_cafe_id)
+
     elif callback.data == 'list_of_kd':
         keyboard = kb.create_cafe_btns()
         keyboard.inline_keyboard.append([InlineKeyboardButton(text='⏪ Выйти', callback_data='exit')])
-        await callback.message.edit_text(f"Для кого хотите посмотреть БЗ?", reply_markup=keyboard)
+        await callback.message.edit_text("Для кого хотите посмотреть БЗ?", reply_markup=keyboard)
         await state.set_state(admin.wait_for_job_id_2)
+
     elif callback.data == "find_admin_kd":
-        await callback.message.edit_text(f"Поиск БЗ по ключевому слову\nВведите слово или предложение")
+        await callback.message.edit_text("Поиск БЗ по ключевому слову\nВведите слово или предложение")
         await state.set_state(admin.wait_for_find_kd)
 
 
