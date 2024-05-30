@@ -2,7 +2,7 @@ from aiogram.filters import Command
 from aiogram.types import Message
 from aiogram import F, Router
 import app.keyboards as kb
-from states.test import admin, user
+from states.states import admin, user
 from aiogram.fsm.context import FSMContext
 from app.database.bd import Database
 from configs import ADMIN

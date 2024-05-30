@@ -1,7 +1,7 @@
 from aiogram.types import Message, CallbackQuery, InputMediaPhoto, InputMediaDocument
 from aiogram import Router
 import app.keyboards as kb
-from states.test import user
+from states.states import user
 from aiogram.fsm.context import FSMContext
 from app.database.bd import Database
 
@@ -72,63 +72,114 @@ async def find_kd(message: Message, state: FSMContext):
 
 @router.callback_query(lambda q: q.data, user.wait_for_click_folder)
 async def folders(callback: CallbackQuery, state: FSMContext):
-    data = callback.data.split('_')
-    folder_id = data[0]
-    folder_name = data[1]
-    data = await state.get_data()
-    cafe_id = data["wait_user"][0]
-    job_id = data["wait_user"][1]
-    kd_btns = kb.make_kd_kb1(job_id, cafe_id, folder_id)
-    await callback.message.edit_text(f"Вот все БЗ в папке {folder_name}", reply_markup=kd_btns)
-    await state.set_state(user.wait_for_click_kd)
+    if callback.data == "exit_user":
+        await state.clear()
+        await state.set_state(user.wait_user)
+        await callback.message.delete(inline_message_id=callback.inline_message_id)
+        user_id = callback.from_user.id
+        await callback.message.answer(
+            f"Добро пожаловать в юзер-панель, {db.get_first_name(user_id)} {db.get_last_name(user_id)}!",
+            reply_markup=kb.user_manager_btns if db.get_job_id(user_id) == 1 else kb.user_btns)
+    else:
+        data = callback.data.split('_')
+        folder_id = data[0]
+        folder_name = data[1]
+        data = await state.get_data()
+        cafe_id = data["wait_user"][0]
+        job_id = data["wait_user"][1]
+        kd_btns = kb.make_kd_kb1(job_id, cafe_id, folder_id)
+        await callback.message.edit_text(f"Вот все БЗ в папке {folder_name}", reply_markup=kd_btns)
+        await state.update_data(folder=(folder_id, folder_name))
+        await state.set_state(user.wait_for_click_kd)
 
 
 @router.callback_query(lambda q: q.data, user.wait_for_click_kd)
 async def kd_in_folder(callback: CallbackQuery, state: FSMContext):
-    global text
-    data = callback.data.split('_')
-    base_id = data[0]
-    photos_group_elements = []  # создаем массив групповых элементов (видева, фотоб аудио...)
-    documents_group_elements = []  # создаем массив групповых элементов (видева, фотоб аудио...)
-    try:
-        files = db.get_kd_files(base_id)
-        for file in files:  # если есть хоть одно фото, то
-            element = file[0]
-            file_type = file[1]
-            if file_type == 'photo':
-                try:
-                    photos_group_elements.append(InputMediaPhoto(media=element))  # добавляем элементы
-                except:
-                    pass
-            elif file_type == 'document':
-                try:
-                    documents_group_elements.append(InputMediaDocument(media=element))  # добавляем элементы
-                except:
-                    pass
-    except:
-        print("prozoshol pizdec1")
-    try:
-        await callback.message.answer_media_group(documents_group_elements)
-    except:
-        pass
+    if callback.data == "back_user":
+        cafe_id = db.get_cafe_id(callback.from_user.id)
+        job_id = db.get_job_id(callback.from_user.id)
+        all_folders = db.get_folders(cafe_id, job_id)
+        folders = kb.create_folders_btn_look(all_folders=all_folders)
+        await callback.message.edit_text(f"Выберите папку", reply_markup=folders)
+        await state.update_data(wait_user=(cafe_id, job_id))
+        await state.set_state(user.wait_for_click_folder)
+    else:
+        global text
+        data = callback.data.split('_')
+        base_id = data[0]
+        photos_group_elements = []  # создаем массив групповых элементов (видева, фотоб аудио...)
+        documents_group_elements = []  # создаем массив групповых элементов (видева, фотоб аудио...)
+        try:
+            files = db.get_kd_files(base_id)
+            for file in files:  # если есть хоть одно фото, то
+                element = file[0]
+                file_type = file[1]
+                if file_type == 'photo':
+                    try:
+                        photos_group_elements.append(InputMediaPhoto(media=element))  # добавляем элементы
+                    except:
+                        pass
+                elif file_type == 'document':
+                    try:
+                        documents_group_elements.append(InputMediaDocument(media=element))  # добавляем элементы
+                    except:
+                        pass
+        except:
+            print("prozoshol pizdec1")
+        try:
+            await callback.message.answer_media_group(documents_group_elements)
+        except:
+            pass
 
-    try:
-        await callback.message.answer_media_group(photos_group_elements)
-    except:
-        pass
+        try:
+            await callback.message.answer_media_group(photos_group_elements)
+        except:
+            pass
 
-    try:
-        KD_text = db.get_kd_text(base_id)
-        for x in range(0, len(KD_text), 4096):
-            if len(KD_text) - x <= 4096:
+        try:
+            KD_text = db.get_kd_text(base_id)
+            for x in range(0, len(KD_text), 4096):
+                if len(KD_text) - x <= 4096:
+                    text = KD_text[x:x + 4096]
+                    break
                 text = KD_text[x:x + 4096]
-                break
-            text = KD_text[x:x + 4096]
-            await callback.message.answer(f"{text}")
-        await callback.message.answer(f"{text}", reply_markup=kb.exit_user_btns)
-    except:
-        await callback.message.answer(text=f"Тут пока ничего нет", reply_markup=kb.exit_user_btns)
-    await state.set_state(user.wait_for_exit)
+                await callback.message.answer(f"{text}")
+            await callback.message.answer(f"{text}", reply_markup=kb.back_exit_user_btns)
+        except:
+            await callback.message.answer(text=f"Тут пока ничего нет", reply_markup=kb.exit_user_btns)
+        from main import bot
+        await bot.delete_message(chat_id=callback.from_user.id, message_id=callback.message.message_id)
+        await state.set_state(user.wait_for_back_exit)
+
+        @router.callback_query(lambda q: q.data, user.wait_for_back_exit)
+        async def wait_for_back_exit(callback: CallbackQuery, state: FSMContext):
+            if callback.data == "exit_user":
+                await state.clear()
+                await state.set_state(user.wait_user)
+                from main import bot
+                await bot.edit_message_reply_markup(chat_id=callback.from_user.id,
+                                                    message_id=callback.message.message_id,
+                                                    reply_markup=None)
+                user_id = callback.from_user.id
+                await callback.message.answer(
+                    f"Добро пожаловать в юзер-панель, {db.get_first_name(user_id)} {db.get_last_name(user_id)}!",
+                    reply_markup=kb.user_manager_btns if db.get_job_id(user_id) == 1 else kb.user_btns)
+            elif callback.data == "back_user":
+                try:
+                    data = await state.get_data()
+                    folder_id, folder_name = data["folder"][0], data["folder"][1]
+                    await state.update_data(folder=(folder_id, folder_name))
+                except:
+                    data = callback.data.split('_')
+                    folder_id = data[0]
+                    folder_name = data[1]
+                    data = await state.get_data()
+                cafe_id = data["wait_user"][0]
+                job_id = data["wait_user"][1]
+                kd_btns = kb.make_kd_kb1(job_id, cafe_id, folder_id)
+                await callback.message.edit_reply_markup(reply_markup=None)
+                await callback.message.answer(f"Вот все БЗ в папке {folder_name}", reply_markup=kd_btns)
+                await state.set_state(user.wait_for_click_kd)
 
 
 
@@ -154,7 +205,7 @@ async def wait_for_action(callback: CallbackQuery, state: FSMContext):
         from main import bot
         await bot.edit_message_text(
             f"Введите позицию в виде (через перенос строки):\nПолное название\nАртикул(если нет, то \"-\")\nКороткое название\nМера измерения",
-            chat_id=callback.from_user.id, message_id=callback.message.message_id)
+            chat_id=callback.from_user.id, message_id=callback.message.message_id, reply_markup=kb.back_user_btns)
         await state.set_state(user.wait_for_create_good)
     # Удалить позицию
     elif callback.data == "delete_good":
@@ -260,6 +311,7 @@ async def wait_for_create_good(message: Message, state: FSMContext):
         await message.answer(f"Произошла ошибка, попробуйте ещё раз", reply_markup=kb.exit_user_btns)
 
 
+
 @router.callback_query(user.wait_for_create_order)
 async def wait_for_create_order(callback: CallbackQuery, state: FSMContext):
     data = await state.get_data()
@@ -348,7 +400,7 @@ async def send(message: Message, state: FSMContext):
 
 
 @router.callback_query(user.wait_for_exit)
-async def user_data(callback: CallbackQuery, state: FSMContext):
+async def wait_for_exit(callback: CallbackQuery, state: FSMContext):
     await state.clear()
     await state.set_state(user.wait_user)
     from main import bot
@@ -360,7 +412,7 @@ async def user_data(callback: CallbackQuery, state: FSMContext):
         reply_markup=kb.user_manager_btns if db.get_job_id(user_id) == 1 else kb.user_btns)
 
 @router.callback_query(lambda q: q.data == 'exit_user')
-async def user_data(callback: CallbackQuery, state: FSMContext):
+async def exit_user(callback: CallbackQuery, state: FSMContext):
     await state.clear()
     await state.set_state(user.wait_user)
     await callback.message.delete(inline_message_id=callback.inline_message_id)

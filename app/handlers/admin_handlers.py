@@ -3,7 +3,7 @@ from aiogram.types import Message, CallbackQuery, InputMediaPhoto, InputMediaDoc
     InlineKeyboardButton
 from aiogram import Router
 import app.keyboards as kb
-from states.test import admin
+from states.states import admin
 from aiogram.fsm.context import FSMContext
 from app.database.bd import Database
 from main import bot
@@ -135,8 +135,18 @@ async def choose_user_update(callback: CallbackQuery, state: FSMContext):
         @router.callback_query(admin.wait_for_delete_user)
         async def delete_user(callback: CallbackQuery, state: FSMContext):
             if callback.data == "yes":
-                db.set_banned_user(callback.from_user.id)
-                db.delete_user(callback.from_user.id)
+                data = await state.get_data()
+                delete_user_id = data["wait_user_info"]
+                if callback.message.from_user.id != delete_user_id:
+                    db.set_banned_user(delete_user_id)
+                    db.delete_user(delete_user_id)
+                    await bot.edit_message_text(f"Сотрудник удалён", chat_id=callback.message.chat.id,
+                                        message_id=callback.message.message_id)
+                    user_id = callback.from_user.id
+                    await callback.message.answer(
+                        f"Добро пожаловать в админ-панель, {db.get_first_name(user_id)} {db.get_last_name(user_id)}!",
+                        reply_markup=kb.admin_btns)
+                    await state.set_state(admin.wait_admin)
             elif callback.data == "no":
                 await bot.delete_message(chat_id=callback.from_user.id,
                                          message_id=callback.message.message_id)

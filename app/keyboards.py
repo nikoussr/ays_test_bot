@@ -123,6 +123,7 @@ def make_kd_kb1(job_id, cafe_id, folder_id):
     for kd in all_kds:
         if kd[0] is not None:
             all_bases.append([InlineKeyboardButton(text=kd[0], callback_data=str(kd[1]) + '_' + kd[0][:30])])
+    all_bases.append([InlineKeyboardButton(text='↩ Назад', callback_data='back_user')])
     return InlineKeyboardMarkup(inline_keyboard=all_bases)
 
 
@@ -190,6 +191,7 @@ def create_folders_btn_look(all_folders):
                                                      callback_data=str(all_folders[folders_count][0]) + '_' + str(
                                                          all_folders[folders_count][1]))])
                 folders_count += 1
+        folders.append([InlineKeyboardButton(text='⏪ Выйти', callback_data='exit_user')])
         return InlineKeyboardMarkup(inline_keyboard=folders)
 
 
@@ -359,6 +361,16 @@ exit_btns = InlineKeyboardMarkup(inline_keyboard=[
 exit_user_btns = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='⏪ Выйти', callback_data='exit_user')]
 ])
+
+back_user_btns = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='↩ Назад', callback_data='back_user')]
+])
+
+back_exit_user_btns = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='↩ Назад', callback_data='back_user'), InlineKeyboardButton(text='⏪ Выйти', callback_data='exit_user')
+]
+])
+
 
 """Клавиатура для сотрудника"""
 user_btns = InlineKeyboardMarkup(inline_keyboard=[

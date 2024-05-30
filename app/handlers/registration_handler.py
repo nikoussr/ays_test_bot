@@ -1,7 +1,7 @@
 from aiogram.types import Message, CallbackQuery
 from aiogram import Router
 import app.keyboards as kb
-from states.test import register, user, admin
+from states.states import register, user, admin
 from aiogram.fsm.context import FSMContext
 from app.database.bd import Database
 from configs import JOBS, CAFES, ADMIN
@@ -93,7 +93,7 @@ async def jobs(callback: CallbackQuery, state: FSMContext):
 async def yes(callback: CallbackQuery, state: FSMContext):
     await callback.message.edit_text(f'Регистрация прошла успешно', reply_markup=None)
     user_id = str(callback.from_user.id)
-    print(user_id)
+    print(f"Зарегестрировался {user_id}")
     if user_id not in ADMIN:
         await callback.message.answer(
             f"Добро пожаловать в юзер-панель, {db.get_first_name(user_id)} {db.get_last_name(user_id)}!",
@@ -104,7 +104,6 @@ async def yes(callback: CallbackQuery, state: FSMContext):
             f"Добро пожаловать в админ-панель, {db.get_first_name(user_id)} {db.get_last_name(user_id)}!",
             reply_markup=kb.admin_btns)
         await state.set_state(admin.wait_admin)
-        print('START')
 
 
 @router.callback_query(lambda q: q.data == 'no', register.wait_yes_no)

@@ -1,1 +1,1 @@
-from .test import register
+from .states import register
