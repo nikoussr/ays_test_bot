@@ -26,52 +26,53 @@ async def reg(callback: CallbackQuery, state: FSMContext):
 
 @router.message(register.wait_first_name)
 async def first(message: Message, state: FSMContext):
-    await state.update_data(wait_first_name=message.text)
-    await state.set_state(register.wait_last_name)
-    data = await state.get_data()
-    db.set_first_name(message.from_user.id, data["wait_first_name"])
-    await message.answer(f'Введите фамилию')
+    if message.text != "/start":
+        await state.update_data(wait_first_name=message.text)
+        await state.set_state(register.wait_last_name)
+        data = await state.get_data()
+        db.set_first_name(message.from_user.id, data["wait_first_name"])
+        await message.answer(f'Введите фамилию')
 
 
 @router.message(register.wait_last_name)
 async def second(message: Message, state: FSMContext):
-    await state.update_data(wait_last_name=message.text)
-    data = await state.get_data()
-    db.set_last_name(message.from_user.id, data["wait_last_name"])
-    await message.answer(f'Введите номер телефрна в формате "89..."')
-    await state.set_state(register.wait_phone_number)
-
+    if message.text != "/start":
+        await state.update_data(wait_last_name=message.text)
+        data = await state.get_data()
+        db.set_last_name(message.from_user.id, data["wait_last_name"])
+        await message.answer(f'Введите номер телефрна в формате "89..."')
+        await state.set_state(register.wait_phone_number)
 
 
 @router.message(register.wait_phone_number)
 async def third(message: Message, state: FSMContext):
-    await state.update_data(wait_phone_number=message.text)
-    data = await state.get_data()
-    db.set_phone_number(message.from_user.id, data["wait_phone_number"])
-    await message.answer(f"Когда вы родились?\nФормат ввода - 01.02.2003")
-    await state.set_state(register.wait_for_date_of_birth)
-
+    if message.text != "/start":
+        await state.update_data(wait_phone_number=message.text)
+        data = await state.get_data()
+        db.set_phone_number(message.from_user.id, data["wait_phone_number"])
+        await message.answer(f"Когда вы родились?\nФормат ввода - 01.02.2003")
+        await state.set_state(register.wait_for_date_of_birth)
 
 
 @router.message(register.wait_for_date_of_birth)
 async def third(message: Message, state: FSMContext):
-    await state.update_data(wait_for_date_of_birth=message.text)
-    data = await state.get_data()
-    db.set_date_of_birth(message.from_user.id, data["wait_for_date_of_birth"])
-    await message.answer(f"Где вы работаете?", reply_markup=kb.create_cafe_id_btns_register())
-    await state.set_state(register.wait_cafe_id)
+    if message.text != "/start":
+        await state.update_data(wait_for_date_of_birth=message.text)
+        data = await state.get_data()
+        db.set_date_of_birth(message.from_user.id, data["wait_for_date_of_birth"])
+        await message.answer(f"Где вы работаете?", reply_markup=kb.create_cafe_id_btns_register())
+        await state.set_state(register.wait_cafe_id)
 
 
 @router.callback_query(
     lambda q: q.data in CAFES,
     register.wait_cafe_id)
 async def cafes(callback: CallbackQuery, state: FSMContext):
-    db.set_cafe_id(callback.from_user.id, callback.data[0])
-    await callback.message.edit_text("Место работы выбрано", reply_markup=None)
-    await callback.message.answer(f"Кем вы работаете?", reply_markup=kb.create_job_id_btns_register())
-    await state.set_state(register.wait_job_id)
-
-
+    if callback.message.text != "/start":
+        db.set_cafe_id(callback.from_user.id, callback.data[0])
+        await callback.message.edit_text("Место работы выбрано", reply_markup=None)
+        await callback.message.answer(f"Кем вы работаете?", reply_markup=kb.create_job_id_btns_register())
+        await state.set_state(register.wait_job_id)
 
 
 @router.callback_query(
@@ -85,8 +86,6 @@ async def jobs(callback: CallbackQuery, state: FSMContext):
         f"Вас зовут - {user_info[0]} {user_info[1]}\nномер телефона - {user_info[2]}\nдата раждения - {user_info[3]}\nдолжность - {user_info[4]}\nместо работы - {user_info[5]}\nВсё верно?",
         reply_markup=kb.y_n_btns)
     await state.set_state(register.wait_yes_no)
-
-
 
 
 @router.callback_query(lambda q: q.data == 'yes', register.wait_yes_no)
