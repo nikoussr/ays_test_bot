@@ -127,6 +127,14 @@ def make_kd_kb1(job_id, cafe_id, folder_id):
     return InlineKeyboardMarkup(inline_keyboard=all_bases)
 
 
+def make_kd_kb_admin(job_id, cafe_id, folder_id):
+    all_bases = []
+    all_kds = db.get_all_kd(job_id, cafe_id, folder_id)
+    for kd in all_kds:
+        if kd[0] is not None:
+            all_bases.append([InlineKeyboardButton(text=kd[0], callback_data=str(kd[1]) + '_' + kd[0][:30])])
+    return InlineKeyboardMarkup(inline_keyboard=all_bases)
+
 def make_kd_kb_base_ids(base_ids):
     all_bases = []
     kd_names = []
@@ -194,6 +202,28 @@ def create_folders_btn_look(all_folders):
         folders.append([InlineKeyboardButton(text='⏪ Выйти', callback_data='exit_user')])
         return InlineKeyboardMarkup(inline_keyboard=folders)
 
+def create_folders_btn_look_admin(all_folders):
+    """Просмотр БЗ"""
+    folders = []
+    folders_count = 0
+    if len(all_folders) == 0:
+        return InlineKeyboardMarkup(inline_keyboard=folders)
+    else:
+        while folders_count < len(all_folders):
+            if len(all_folders) - folders_count >= 2:
+                folders.append([InlineKeyboardButton(text="🗂 " + str(all_folders[folders_count][1]),
+                                                     callback_data=str(all_folders[folders_count][0]) + '_' + str(
+                                                         all_folders[folders_count][1])),
+                                InlineKeyboardButton(text="🗂 " + str(all_folders[folders_count + 1][1]),
+                                                     callback_data=str(all_folders[folders_count + 1][0]) + '_' + str(
+                                                         all_folders[folders_count + 1][1]))])
+                folders_count += 2
+            else:
+                folders.append([InlineKeyboardButton(text="🗂 " + str(all_folders[folders_count][1]),
+                                                     callback_data=str(all_folders[folders_count][0]) + '_' + str(
+                                                         all_folders[folders_count][1]))])
+                folders_count += 1
+        return InlineKeyboardMarkup(inline_keyboard=folders)
 
 """Клавиатура с товарами"""
 
@@ -367,7 +397,7 @@ back_user_btns = InlineKeyboardMarkup(inline_keyboard=[
 ])
 
 back_exit_user_btns = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='↩ Назад', callback_data='back_user'), InlineKeyboardButton(text='⏪ Выйти', callback_data='exit_user')
+    [InlineKeyboardButton(text='↩ Назад', callback_data='back_user'), InlineKeyboardButton(text='⏪ Выйти', callback_data='exit_userr')
 ]
 ])
 

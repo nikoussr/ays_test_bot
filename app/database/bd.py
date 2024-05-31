@@ -148,7 +148,6 @@ class Database:
         with self.connection:
             self.cursor.execute("SELECT user_id from users WHERE cafe_id=?", (cafe_id,))
             result = self.cursor.fetchall()
-            print(result)
             return result
 
     def get_all_kd(self, job_id, cafe_id, folder_id):

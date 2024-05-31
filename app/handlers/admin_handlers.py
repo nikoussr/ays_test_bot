@@ -1,5 +1,5 @@
 import aiogram.exceptions
-from aiogram.types import Message, CallbackQuery, InputMediaPhoto, InputMediaDocument, InlineKeyboardMarkup, \
+from aiogram.types import Message, CallbackQuery, InputMediaPhoto, InputMediaDocument, \
     InlineKeyboardButton
 from aiogram import Router
 import app.keyboards as kb
@@ -93,7 +93,6 @@ async def choose_user_update(callback: CallbackQuery, state: FSMContext):
                                         reply_markup=None)
     if callback.data == 'change_job_id':
         keyboard = kb.create_job_id_btns_register()
-        # keyboard.inline_keyboard.append([InlineKeyboardButton(text='↩️ Назад', callback_data='back')])
         await callback.message.answer(f"На какую должность перевести сотрудника?", reply_markup=keyboard)
         await state.set_state(admin.wait_for_change_job_id)
 
@@ -111,7 +110,6 @@ async def choose_user_update(callback: CallbackQuery, state: FSMContext):
                                                  reply_markup=kb.exit_btns)
     elif callback.data == 'change_cafe_id':
         keyboard = kb.create_cafe_id_btns_register()
-        # keyboard.inline_keyboard.append([InlineKeyboardButton(text='↩️ Назад', callback_data='back')])
         await callback.message.answer(f"В какое заведение перевести сотрудника?", reply_markup=keyboard)
         await state.set_state(admin.wait_for_change_cafe_id)
 
@@ -314,16 +312,16 @@ async def create_new_folder(callback: CallbackQuery, state: FSMContext):
 
 @router.message(admin.wait_for_chapter_name)
 async def set_chapter_name(message: Message, state: FSMContext):
-    print("Создаёт БЗ, выбирает имя")
+    print("Создаёт БЗ, выбирает название")
     schapter_name = message.text
     await state.update_data(wait_for_chapter_name=schapter_name)
-    await message.answer(f"Введите текст для БЗ. Можно добавить фотографии")
+    await message.answer(f"Введите текст для БЗ. Можно добавить файлы")
     await state.set_state(admin.wait_for_chapter_text)
 
 
 @router.message(admin.wait_for_chapter_text)
 async def set_chapter_text_file(message: Message, state: FSMContext):
-    print("Создаёт БЗ, вставляет текст + фото")
+    print("Создаёт БЗ, вставляет текст + файл")
 
     data = await state.get_data()
     photos = data.get('photos', [])
@@ -372,7 +370,7 @@ async def set_chapter_text_file(message: Message, state: FSMContext):
         if isinstance(data["wait_for_folder"], list):
             folder_id = data["wait_for_folder"][0]
             if text or photos:
-                db.set_kd(cafe_id, job_id, kd_name, folder_id, (text if kd_text else captions.get(photos[0])))
+                db.set_kd(cafe_id, job_id, kd_name, folder_id, (text if text != "" else captions.get(photos[0][0])))
             else:
                 db.set_kd(cafe_id, job_id, kd_name, folder_id, '')
             base_id = db.get_base_id()
@@ -441,7 +439,7 @@ async def list_of_jobs(callback: CallbackQuery, state: FSMContext):
     job = callback.data.split('_')
     await state.update_data(wait_for_click_kd_3=job)
     all_folders = db.get_folders(cafe_id=cafe_id[0], job_id=job[0])
-    all_folders = kb.create_folders_btn_look(all_folders=all_folders)
+    all_folders = kb.create_folders_btn_look_admin(all_folders=all_folders)
     await callback.message.answer(f"Выберите папку",
                                   reply_markup=all_folders)
     await callback.message.edit_text(f"Вот все папки для должности {job[1]}", reply_markup=None)
@@ -455,7 +453,7 @@ async def create_new_folder(callback: CallbackQuery, state: FSMContext):
     job = data["wait_for_click_kd_3"]
     folder_id = callback.data
     folder_id = folder_id.split('_')
-    kd_btns = kb.make_kd_kb1(job[0], cafe_id, folder_id[0])
+    kd_btns = kb.make_kd_kb_admin(job[0], cafe_id, folder_id[0])
     await callback.message.edit_text(f"Вот все БЗ в папке {folder_id[1]}", reply_markup=kd_btns)
     await state.set_state(admin.wait_for_click_kd_5)
 
@@ -472,8 +470,6 @@ async def text_of_chapter(callback: CallbackQuery, state: FSMContext):
         for file in files:  # если есть хоть одно фото, то
             element = file[0]
             file_type = file[1]
-            print(element)
-            print(file_type)
             if file_type == 'photo':
                 try:
                     photos_group_elements.append(InputMediaPhoto(media=element))  # добавляем элементы
@@ -587,8 +583,8 @@ async def edit_text(message: Message, state: FSMContext):
         text = ''
         for x in kd_text:
             text += x
-            print(len(text))
         db.set_kd_text(data["wait_for_click_kd_1"], text)
+        await state.clear()
         await callback.message.answer(f'БЗ успешно отредактирована', reply_markup=kb.exit_btns)
         await bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id,
                                             reply_markup=None)

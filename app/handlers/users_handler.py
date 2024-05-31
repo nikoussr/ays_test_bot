@@ -153,7 +153,7 @@ async def kd_in_folder(callback: CallbackQuery, state: FSMContext):
 
         @router.callback_query(lambda q: q.data, user.wait_for_back_exit)
         async def wait_for_back_exit(callback: CallbackQuery, state: FSMContext):
-            if callback.data == "exit_user":
+            if callback.data == "exit_userr":
                 await state.clear()
                 await state.set_state(user.wait_user)
                 from main import bot
