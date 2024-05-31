@@ -393,7 +393,7 @@ exit_user_btns = InlineKeyboardMarkup(inline_keyboard=[
 ])
 
 back_user_btns = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='↩ Назад', callback_data='back_user')]
+    [InlineKeyboardButton(text='↩ Назад', callback_data='back_user_buy')]
 ])
 
 back_exit_user_btns = InlineKeyboardMarkup(inline_keyboard=[

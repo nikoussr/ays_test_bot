@@ -297,18 +297,21 @@ async def wait_for_confirm_delete(callback: CallbackQuery, state: FSMContext):
         await state.set_state(user.wait_for_delete_good)
 @router.message(user.wait_for_create_good)
 async def wait_for_create_good(message: Message, state: FSMContext):
-    cafe_id = db.get_cafe_id(message.from_user.id)
-    param = message.text.splitlines()
-    data = []
-    try:
-        for i in range(0, len(param), 4):
-            data.append(param[i:i + 4])
-        for i in range(len(data)):
-            db.insert_good(data[i][0], data[i][1], data[i][2], data[i][3].lower().replace('.', ''), cafe_id)
-        await message.answer(f"Позиция(-и) добавлена(-ы)", reply_markup=kb.exit_user_btns)
+    if 'back_user' in message.text:
+        await message.answer(f"aasaaaa")
+    else:
+        cafe_id = db.get_cafe_id(message.from_user.id)
+        param = message.text.splitlines()
+        data = []
+        try:
+            for i in range(0, len(param), 4):
+                data.append(param[i:i + 4])
+            for i in range(len(data)):
+                db.insert_good(data[i][0], data[i][1], data[i][2], data[i][3].lower().replace('.', ''), cafe_id)
+            await message.answer(f"Позиция(-и) добавлена(-ы)", reply_markup=kb.exit_user_btns)
 
-    except IndexError:
-        await message.answer(f"Произошла ошибка, попробуйте ещё раз", reply_markup=kb.exit_user_btns)
+        except IndexError:
+            await message.answer(f"Произошла ошибка, попробуйте ещё раз", reply_markup=kb.exit_user_btns)
 
 
 
@@ -420,4 +423,10 @@ async def exit_user(callback: CallbackQuery, state: FSMContext):
     await callback.message.answer(
         f"Добро пожаловать в юзер-панель, {db.get_first_name(user_id)} {db.get_last_name(user_id)}!",
         reply_markup=kb.user_manager_btns if db.get_job_id(user_id) == 1 else kb.user_btns)
+
+@router.callback_query(lambda q: q.data == 'back_user_buy')
+async def exit_user(callback: CallbackQuery, state: FSMContext):
+    await state.clear()
+    await callback.message.edit_text(f"Выберите действие", reply_markup=kb.manager_order_btns)
+    await state.set_state(user.wait_for_action)
 
