@@ -270,6 +270,7 @@ async def wait_for_delete_good(callback: CallbackQuery, state: FSMContext):
                                     chat_id=callback.from_user.id,
                                     message_id=callback.message.message_id, reply_markup=kb.y_n_btns)
         await state.update_data(wait_for_delete=c_data)
+        await state.update_data(wait_for_delete_good=(art, short_name, ids, page))
         await state.set_state(user.wait_for_confirm_delete)
     elif callback.data == "ready":
         from main import bot
@@ -290,22 +291,25 @@ async def wait_for_confirm_delete(callback: CallbackQuery, state: FSMContext):
         c_data = data["wait_for_delete"]
         db.delete_good(c_data)
         await callback.message.edit_text(f"Удалено", reply_markup=None)
+        page = data["wait_for_delete_good"][3]
         cafe_id = db.get_cafe_id(callback.from_user.id)
         ids = db.get_all_goods_ids(cafe_id)
         art = db.get_all_goods_art(cafe_id)
         short_name = db.get_all_goods_short_name(cafe_id)
-        await state.update_data(delete_good=(art, short_name, ids, 1))
-        keyboard = kb.create_goods_btns(short_name, ids)
+        await state.update_data(wait_for_delete_good=(art, short_name, ids, page))
+        keyboard = kb.update_goods_btns(short_name, ids, page)
         await callback.message.answer(f"Что удалить?", reply_markup=keyboard)  # клава с товарами
         await state.set_state(user.wait_for_delete_good)
     else:
         await callback.message.edit_text(f"Не удалось удалить", reply_markup=None)
+        data = await state.get_data()
+        page = data["wait_for_delete_good"][3]
         cafe_id = db.get_cafe_id(callback.from_user.id)
         ids = db.get_all_goods_ids(cafe_id)
         art = db.get_all_goods_art(cafe_id)
         short_name = db.get_all_goods_short_name(cafe_id)
-        await state.update_data(delete_good=(art, short_name, cafe_id, 1))
-        keyboard = kb.create_goods_btns(short_name, ids)
+        await state.update_data(delete_good=(art, short_name, ids, page))
+        keyboard = kb.update_goods_btns(short_name, ids, page)
         await callback.message.answer(f"Что удалить?", reply_markup=keyboard)  # клава с товарами
         await state.set_state(user.wait_for_delete_good)
 

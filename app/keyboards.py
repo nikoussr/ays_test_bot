@@ -259,6 +259,7 @@ def create_goods_btns(short_name, id):
 
 def update_goods_btns(short_name, ids, page):
     goods = []
+    page = int(page)
     if (len(ids) // 10 + 1 - page) == 0 and page > 1:
         goods.append([InlineKeyboardButton(text="<<", callback_data='prev_page'),
                       InlineKeyboardButton(text=str(page), callback_data="⛔"),
