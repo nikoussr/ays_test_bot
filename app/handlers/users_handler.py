@@ -38,7 +38,8 @@ async def user_panel(callback: CallbackQuery, state: FSMContext):
     # Написать разработчику
     elif callback.data == 'kick_me':
         await callback.message.edit_text(
-            "Здравствуйте! Если у вас есть какие-либо вопросы, предложения или Вы нашли баги, пожалуйста, напишите мне.\nЯ всегда готов помочь и выслушать Ваше мнение. Спасибо!", reply_markup=kb.exit_user_btns)
+            "Здравствуйте! Если у вас есть какие-либо вопросы, предложения или Вы нашли баги, пожалуйста, напишите мне.\nЯ всегда готов помочь и выслушать Ваше мнение. Спасибо!",
+            reply_markup=kb.exit_user_btns)
         await state.set_state(user.wait_for_user_message)
 
 
@@ -48,7 +49,7 @@ async def user_panel(callback: CallbackQuery, state: FSMContext):
 @router.message(user.wait_for_find_kd)
 async def find_kd(message: Message, state: FSMContext):
     from main import bot
-    await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id-1)
+    await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id - 1)
     find_text = str(message.text)
     data = await state.get_data()
     cafe_id = data["find_user_kd"][0]
@@ -61,6 +62,7 @@ async def find_kd(message: Message, state: FSMContext):
             base_ids.append(kd[1])
     if base_ids:
         await message.answer(f"Выбирай", reply_markup=kb.make_kd_kb_base_ids(base_ids))
+        await state.update_data(base_ids_find=base_ids)
         await state.set_state(user.wait_for_click_kd)
     else:
         await message.answer(f"Ничего не найдено", reply_markup=kb.exit_user_btns)
@@ -166,21 +168,28 @@ async def kd_in_folder(callback: CallbackQuery, state: FSMContext):
                     reply_markup=kb.user_manager_btns if db.get_job_id(user_id) == 1 else kb.user_btns)
             elif callback.data == "back_user":
                 try:
-                    data = await state.get_data()
-                    folder_id, folder_name = data["folder"][0], data["folder"][1]
-                    await state.update_data(folder=(folder_id, folder_name))
-                except:
-                    data = callback.data.split('_')
-                    folder_id = data[0]
-                    folder_name = data[1]
-                    data = await state.get_data()
-                cafe_id = data["wait_user"][0]
-                job_id = data["wait_user"][1]
-                kd_btns = kb.make_kd_kb1(job_id, cafe_id, folder_id)
-                await callback.message.edit_reply_markup(reply_markup=None)
-                await callback.message.answer(f"Вот все БЗ в папке {folder_name}", reply_markup=kd_btns)
-                await state.set_state(user.wait_for_click_kd)
 
+                    try:
+                        data = await state.get_data()
+                        folder_id, folder_name = data["folder"][0], data["folder"][1]
+                        await state.update_data(folder=(folder_id, folder_name))
+                    except:
+                        data = callback.data.split('_')
+                        folder_id = data[0]
+                        folder_name = data[1]
+                        data = await state.get_data()
+                    cafe_id = data["wait_user"][0]
+                    job_id = data["wait_user"][1]
+                    kd_btns = kb.make_kd_kb1(job_id, cafe_id, folder_id)
+                    await callback.message.edit_reply_markup(reply_markup=None)
+                    await callback.message.answer(f"Вот все БЗ в папке {folder_name}", reply_markup=kd_btns)
+                    await state.set_state(user.wait_for_click_kd)
+                except KeyError:
+                    await callback.message.edit_reply_markup(reply_markup=None)
+                    data = await state.get_data()
+                    base_ids = data["base_ids_find"]
+                    await callback.message.answer(f"Выбирай", reply_markup=kb.make_kd_kb_base_ids(base_ids))
+                    await state.set_state(user.wait_for_click_kd)
 
 
 """Закуп"""
@@ -215,7 +224,7 @@ async def wait_for_action(callback: CallbackQuery, state: FSMContext):
         ids = db.get_all_goods_ids(cafe_id)
         art = db.get_all_goods_art(cafe_id)
         short_name = db.get_all_goods_short_name(cafe_id)
-        await state.update_data(delete_good=(art, short_name, ids, 1))
+        await state.update_data(wait_for_delete_good=(art, short_name, ids, 1))
         keyboard = kb.create_goods_btns(short_name, ids)
         await callback.message.answer(f"Что удалить?", reply_markup=keyboard)  # клава с товарами
         await state.set_state(user.wait_for_delete_good)
@@ -229,14 +238,16 @@ async def wait_for_action(callback: CallbackQuery, state: FSMContext):
             f"Добро пожаловать в юзер-панель, {db.get_first_name(user_id)} {db.get_last_name(user_id)}!",
             reply_markup=kb.user_manager_btns if db.get_job_id(user_id) == 1 else kb.user_btns)
 
+
 @router.callback_query(user.wait_for_delete_good)
 async def wait_for_delete_good(callback: CallbackQuery, state: FSMContext):
     data = await state.get_data()
-    ids = data["delete_good"][2]
-    short_name = data["delete_good"][1]
-    art = data["delete_good"][0]
+    page = data["wait_for_delete_good"][3]
+    ids = data["wait_for_delete_good"][2]
+    short_name = data["wait_for_delete_good"][1]
+    art = data["wait_for_delete_good"][0]
     if callback.data == "next_page":
-        page = data["delete_good"][3] + 1
+        page = page + 1
         keyboard = kb.update_goods_btns(short_name, ids, page)
         from main import bot
         await bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id,
@@ -254,7 +265,9 @@ async def wait_for_delete_good(callback: CallbackQuery, state: FSMContext):
     elif callback.data not in ["⛔", "prev_page", "next_page", "ready"]:
         from main import bot
         c_data = callback.data
-        await bot.edit_message_text(text=("Удалить " + db.get_good_short_name(c_data) + ("?"  if db.get_good_art(c_data) == "-" else ', арт. ' + db.get_good_art(c_data))),  chat_id=callback.from_user.id,
+        await bot.edit_message_text(text=("Удалить " + db.get_good_short_name(c_data) + (
+            "?" if db.get_good_art(c_data) == "-" else ', арт. ' + db.get_good_art(c_data))),
+                                    chat_id=callback.from_user.id,
                                     message_id=callback.message.message_id, reply_markup=kb.y_n_btns)
         await state.update_data(wait_for_delete=c_data)
         await state.set_state(user.wait_for_confirm_delete)
@@ -295,24 +308,22 @@ async def wait_for_confirm_delete(callback: CallbackQuery, state: FSMContext):
         keyboard = kb.create_goods_btns(short_name, ids)
         await callback.message.answer(f"Что удалить?", reply_markup=keyboard)  # клава с товарами
         await state.set_state(user.wait_for_delete_good)
+
+
 @router.message(user.wait_for_create_good)
 async def wait_for_create_good(message: Message, state: FSMContext):
-    if 'back_user' in message.text:
-        await message.answer(f"aasaaaa")
-    else:
-        cafe_id = db.get_cafe_id(message.from_user.id)
-        param = message.text.splitlines()
-        data = []
-        try:
-            for i in range(0, len(param), 4):
-                data.append(param[i:i + 4])
-            for i in range(len(data)):
-                db.insert_good(data[i][0], data[i][1], data[i][2], data[i][3].lower().replace('.', ''), cafe_id)
-            await message.answer(f"Позиция(-и) добавлена(-ы)", reply_markup=kb.exit_user_btns)
+    cafe_id = db.get_cafe_id(message.from_user.id)
+    param = message.text.splitlines()
+    data = []
+    try:
+        for i in range(0, len(param), 4):
+            data.append(param[i:i + 4])
+        for i in range(len(data)):
+            db.insert_good(data[i][0], data[i][1], data[i][2], data[i][3].lower().replace('.', ''), cafe_id)
+        await message.answer(f"Позиция(-и) добавлена(-ы)", reply_markup=kb.exit_user_btns)
 
-        except IndexError:
-            await message.answer(f"Произошла ошибка, попробуйте ещё раз", reply_markup=kb.exit_user_btns)
-
+    except IndexError:
+        await message.answer(f"Произошла ошибка, попробуйте ещё раз", reply_markup=kb.exit_user_btns)
 
 
 @router.callback_query(user.wait_for_create_order)
@@ -352,7 +363,8 @@ async def wait_for_create_order(callback: CallbackQuery, state: FSMContext):
             data = await state.get_data()
             info = data["wait_for_good_count"]
             data_str = '\n'.join(
-                [str(index + 1) + '. ' + sublist[0] + ("" if sublist[1] == "-" else ', арт. ' + sublist[1]) + ' - ' + sublist[2] + ' ' + sublist[3] + '.'
+                [str(index + 1) + '. ' + sublist[0] + ("" if sublist[1] == "-" else ', арт. ' + sublist[1]) + ' - ' +
+                 sublist[2] + ' ' + sublist[3] + '.'
                  for
                  index, sublist in enumerate(info)])
             await callback.message.answer(data_str, reply_markup=kb.exit_user_btns)
@@ -391,11 +403,14 @@ async def wait_for_good_count(message: Message, state: FSMContext):
     await state.update_data(wait_for_order=(art, short_name, ids, page))
     await state.set_state(user.wait_for_create_order)
 
+
 """Написать разработчику"""
+
+
 @router.message(user.wait_for_user_message)
 async def send(message: Message, state: FSMContext):
     from main import bot
-    await bot.delete_message(chat_id=message.from_user.id, message_id=message.message_id-1)
+    await bot.delete_message(chat_id=message.from_user.id, message_id=message.message_id - 1)
     await message.answer(f"Cообщение доставлено", reply_markup=kb.exit_user_btns)
     from main import bot
     await bot.send_message(695088267, f"Сообщение от {message.from_user.full_name}:\n{message.text}")
@@ -414,6 +429,7 @@ async def wait_for_exit(callback: CallbackQuery, state: FSMContext):
         f"Добро пожаловать в юзер-панель, {db.get_first_name(user_id)} {db.get_last_name(user_id)}!",
         reply_markup=kb.user_manager_btns if db.get_job_id(user_id) == 1 else kb.user_btns)
 
+
 @router.callback_query(lambda q: q.data == 'exit_user')
 async def exit_user(callback: CallbackQuery, state: FSMContext):
     await state.clear()
@@ -424,9 +440,9 @@ async def exit_user(callback: CallbackQuery, state: FSMContext):
         f"Добро пожаловать в юзер-панель, {db.get_first_name(user_id)} {db.get_last_name(user_id)}!",
         reply_markup=kb.user_manager_btns if db.get_job_id(user_id) == 1 else kb.user_btns)
 
+
 @router.callback_query(lambda q: q.data == 'back_user_buy')
 async def exit_user(callback: CallbackQuery, state: FSMContext):
     await state.clear()
     await callback.message.edit_text(f"Выберите действие", reply_markup=kb.manager_order_btns)
     await state.set_state(user.wait_for_action)
-
