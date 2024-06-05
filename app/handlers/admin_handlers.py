@@ -19,6 +19,7 @@ db = Database('../data/ays_test_database.db')
 
 @router.callback_query(admin.wait_admin)
 async def admin_panel(callback: CallbackQuery, state: FSMContext):
+    await state.clear()
     if callback.data == 'all_message':
         keyboard = kb.create_cafe_id_btns_message()
         keyboard.inline_keyboard.append([InlineKeyboardButton(text='⏪ Выйти', callback_data='exit')])

@@ -5,7 +5,7 @@ class register(StatesGroup):
     wait_first_name = State()
     wait_last_name = State()
     wait_phone_number = State()
-    wait_for_date_of_birth = State()
+    wait_date_of_birth = State()
     wait_job_id = State()
     wait_cafe_id = State()
     wait_yes_no = State()

@@ -51,10 +51,10 @@ async def third(message: Message, state: FSMContext):
         data = await state.get_data()
         db.set_phone_number(message.from_user.id, data["wait_phone_number"])
         await message.answer(f"Когда вы родились?\nФормат ввода - 01.02.2003")
-        await state.set_state(register.wait_for_date_of_birth)
+        await state.set_state(register.wait_date_of_birth)
 
 
-@router.message(register.wait_for_date_of_birth)
+@router.message(register.wait_date_of_birth)
 async def third(message: Message, state: FSMContext):
     if message.text != "/start":
         await state.update_data(wait_for_date_of_birth=message.text)
