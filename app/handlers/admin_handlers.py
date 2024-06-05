@@ -3,7 +3,7 @@ from aiogram.types import Message, CallbackQuery, InputMediaPhoto, InputMediaDoc
     InlineKeyboardButton
 from aiogram import Router
 import app.keyboards as kb
-from states.states import admin
+from states.states import admin, user
 from aiogram.fsm.context import FSMContext
 from app.database.bd import Database
 from main import bot
@@ -47,6 +47,14 @@ async def admin_panel(callback: CallbackQuery, state: FSMContext):
     elif callback.data == "find_admin_kd":
         await callback.message.edit_text("Поиск БЗ по ключевому слову\nВведите слово или предложение")
         await state.set_state(admin.wait_for_find_kd)
+    elif callback.data == "admin_to_user":
+        await state.clear()
+        await state.set_state(user.wait_user)
+        await callback.message.delete(inline_message_id=callback.inline_message_id)
+        user_id = callback.from_user.id
+        await callback.message.answer(
+            f"Добро пожаловать в юзер-панель, {db.get_first_name(user_id)} {db.get_last_name(user_id)}!",
+            reply_markup=kb.user_manager_btns if db.get_job_id(user_id) == 1 else kb.user_btns)
 
 
 """Поиск инфы по сотруднику"""

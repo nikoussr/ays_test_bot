@@ -374,7 +374,9 @@ admin_btns = InlineKeyboardMarkup(inline_keyboard=[
      InlineKeyboardButton(text='💬 Рассылка', callback_data='all_message')],
     [InlineKeyboardButton(text='✍ Создать БЗ', callback_data='make_a_chapter'),
      InlineKeyboardButton(text='📄 Список БЗ', callback_data='list_of_kd')],
-    [InlineKeyboardButton(text='🔎 Поиск БЗ ️', callback_data='find_admin_kd')]])
+    [InlineKeyboardButton(text='🔎 Поиск БЗ ️', callback_data='find_admin_kd'),
+     InlineKeyboardButton(text='🎚️ В юзер', callback_data='admin_to_user'),
+      ]])
 
 """Клавиатура для редактирования"""
 edit_btns = InlineKeyboardMarkup(inline_keyboard=[
