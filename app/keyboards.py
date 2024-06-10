@@ -91,16 +91,19 @@ def create_cafe_id_btns_message():
     cafes_count = 0
     while cafes_count < len(CAFES):
         if len(CAFES) - cafes_count >= 2:
-            all_cafes.append([InlineKeyboardButton(text=CAFES[cafes_count][2:], callback_data=CAFES[cafes_count]),
-                              InlineKeyboardButton(text=CAFES[cafes_count + 1][2:],
-                                                   callback_data=CAFES[cafes_count + 1])])
+            all_cafes.append([InlineKeyboardButton(
+                text=CAFES[cafes_count][2:] + ' ' + db.get_cnt_of_pople_cafe_id(CAFES[cafes_count][0]),
+                callback_data=CAFES[cafes_count]),
+                InlineKeyboardButton(text=CAFES[cafes_count + 1][2:] + ' ' + db.get_cnt_of_pople_cafe_id(
+                    CAFES[cafes_count + 1][0]), callback_data=CAFES[cafes_count + 1])])
             cafes_count += 2
         else:
-            all_cafes.append([InlineKeyboardButton(text=CAFES[cafes_count][2:], callback_data=CAFES[cafes_count])])
+            all_cafes.append([InlineKeyboardButton(
+                text=CAFES[cafes_count][2:] + ' ' + db.get_cnt_of_pople_cafe_id(CAFES[cafes_count][0]),
+                callback_data=CAFES[cafes_count])])
             cafes_count += 1
     all_cafes.append([InlineKeyboardButton(text="Всеобщая рассылка", callback_data='0_всех')])
-
-    return InlineKeyboardMarkup(inline_keyboard=all_cafes, )
+    return InlineKeyboardMarkup(inline_keyboard=all_cafes)
 
 
 """Клавиатура для баз знаний"""
@@ -370,7 +373,7 @@ y_n_btns = InlineKeyboardMarkup(inline_keyboard=[
 
 """Клавиатура для админ-панели"""
 admin_btns = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='👤 Данные сотрудника', callback_data='user_data'),
+    [InlineKeyboardButton(text='👤 Cотрудники', callback_data='user_data'),
      InlineKeyboardButton(text='💬 Рассылка', callback_data='all_message')],
     [InlineKeyboardButton(text='✍ Создать БЗ', callback_data='make_a_chapter'),
      InlineKeyboardButton(text='📄 Список БЗ', callback_data='list_of_kd')],
@@ -380,8 +383,8 @@ admin_btns = InlineKeyboardMarkup(inline_keyboard=[
 
 """Клавиатура для редактирования"""
 edit_btns = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='🖊 Изменить текст', callback_data='edit_text'),
-     InlineKeyboardButton(text='🖊 Изменить название', callback_data='edit_name')],
+    [InlineKeyboardButton(text='🖊 Изм. текст', callback_data='edit_text'),
+     InlineKeyboardButton(text='🖊 Изм. название', callback_data='edit_name')],
     [InlineKeyboardButton(text='🖊 Добавить файлы', callback_data='edit_file'),
      InlineKeyboardButton(text='❌ Удалить БЗ', callback_data='delete_kd')],
     [InlineKeyboardButton(text='⏪ Выйти', callback_data='exit')]
@@ -423,7 +426,7 @@ user_manager_btns = InlineKeyboardMarkup(inline_keyboard=[
 """Клавиатура для закупа"""
 manager_order_btns = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text="🛒 Сделать закуп", callback_data="create_order"),
-     InlineKeyboardButton(text="➕ Добавить позицию", callback_data="make_new_good")],
+     InlineKeyboardButton(text="➕ Доб. позицию", callback_data="make_new_good")],
     [InlineKeyboardButton(text="❌ Удалить позицию", callback_data="delete_good")],
     [InlineKeyboardButton(text="⏪ Выйти", callback_data="exit_user")]
 

@@ -28,3 +28,18 @@ if __name__ == '__main__':
         asyncio.run(main())
     except KeyboardInterrupt:
         print('Exit')
+
+
+"""  user_id = message.from_user.id
+dobs = db.get_date_of_birth_cafe(db.get_cafe_id(user_id))
+now = datetime.datetime.today().date()
+year = datetime.datetime.today().year
+for first_name, last_name, dob in dobs:
+    if dob != '-':
+        dob = list(str(dob).split('.'))
+        dob = datetime.date(year, int(dob[1]), int(dob[0]))
+        print(dob)
+        days = (dob - now).days
+        print(days)
+        if 0 < days <= 82:
+            await message.answer(f"У сотрудника {last_name} {first_name} скоро день рождения! {dob}")"""

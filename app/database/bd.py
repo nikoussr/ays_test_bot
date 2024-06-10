@@ -61,6 +61,11 @@ class Database:
         with self.connection:
             return self.cursor.execute("SELECT date_of_birth FROM users WHERE user_id=?", (user_id,)).fetchall()[0][0]
 
+    def get_date_of_birth_cafe(self, cafe_id):
+        """Добавляет в БД date_of_birth для user_id"""
+        with self.connection:
+            return self.cursor.execute("SELECT first_name, last_name, date_of_birth FROM users WHERE cafe_id=?", (cafe_id,)).fetchall()
+
     def set_job_id(self, user_id, job_id):
         """Добавляет в БД job_id для user_id"""
         with self.connection:

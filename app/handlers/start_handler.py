@@ -1,3 +1,6 @@
+import asyncio
+import datetime
+
 from aiogram.filters import Command
 from aiogram.types import Message
 from aiogram import F, Router
@@ -6,8 +9,7 @@ from states.states import admin, user
 from aiogram.fsm.context import FSMContext
 from app.database.bd import Database
 from configs import ADMIN
-from aiogram.exceptions import  TelegramBadRequest
-
+from aiogram.exceptions import TelegramBadRequest
 
 router = Router()
 db = Database('../data/ays_test_database.db')
@@ -31,10 +33,12 @@ async def cmd_start(message: Message, state: FSMContext):
             print('START')
         elif (str(user_id) in (ADMIN) and not db.user_exists(user_id)):
             await message.answer(
-                f"Добро пожаловать в админ-панель, {message.from_user.first_name}!\nВам нужно пройти регистрацию", reply_markup=kb.reg_btns)
+                f"Добро пожаловать в админ-панель, {message.from_user.first_name}!\nВам нужно пройти регистрацию",
+                reply_markup=kb.reg_btns)
 
         elif (not (db.user_exists(message.from_user.id))):
-            await message.answer("Привет друг!\nЧтобы начать пользоваться этим ботом, нужно пройти регистрацию", reply_markup=kb.reg_btns)
+            await message.answer("Привет друг!\nЧтобы начать пользоваться этим ботом, нужно пройти регистрацию",
+                                 reply_markup=kb.reg_btns)
         else:
             await message.answer(
                 f"Добро пожаловать в юзер-панель, {db.get_first_name(user_id)} {db.get_last_name(user_id)}!",
@@ -43,4 +47,3 @@ async def cmd_start(message: Message, state: FSMContext):
             print("Вошел в юзер-панель")
     else:
         await message.answer(f"Вы заблокированы. Пока!")
-
