@@ -1,6 +1,5 @@
 from aiogram.types import Message, CallbackQuery, InputMediaPhoto, InputMediaDocument
 from aiogram import Router
-from aiogram.filters import Command
 import app.keyboards as kb
 import configs
 from states.states import user
