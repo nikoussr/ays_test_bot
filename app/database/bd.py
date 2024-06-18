@@ -361,6 +361,12 @@ class Database:
         with self.connection:
             return self.cursor.execute(
                 "SELECT user_id FROM wants WHERE id = ?", (want_id,)).fetchall()[0][0]
+
+    def get_want_text(self, want_id):
+        with self.connection:
+            return self.cursor.execute(
+                "SELECT want_text FROM wants WHERE id = ?", (want_id,)).fetchall()[0][0]
+
     def set_wants_is_answered(self, want_id):
         with self.connection:
             return self.cursor.execute(

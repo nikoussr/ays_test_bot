@@ -685,12 +685,11 @@ async def want_reply(message:Message):
     data = message.text.split(' ')
     want_id = data[1]
     user_id = db.get_want_user_id(want_id)
-    want_text = data[2:]
-    want_text = ' '.join(want_text)
-    await bot.send_message(chat_id=user_id, text=f"📩 Ответ на ваш вопрос:\n{want_text}")
+    want_answer_text = data[2:]
+    want_answer_text = ' '.join(want_answer_text)
+    want_text = db.get_want_text(want_id)
+    await bot.send_message(chat_id=user_id, text=f"📩 Пришел ответ на вашу хотелку.\nХотелка: {want_text}\nОтвет: {want_answer_text}")
     db.set_wants_is_answered(want_id)
-
-
 
 """Выход"""
 
