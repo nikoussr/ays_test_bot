@@ -11,35 +11,45 @@ def create_job_btns(cafe_id):
     """Создаёт кнопки для всех должностей, Менеджер 4"""
     all_jobs = []
     jobs_count = 0
-    while jobs_count < len(JOBS):
-        if len(JOBS) - jobs_count >= 2:
+    cafe_id = int(cafe_id)
+    print(JOBS[cafe_id][jobs_count + 1])
+    while jobs_count < len(JOBS[cafe_id]):
+        if len(JOBS[cafe_id]) - jobs_count >= 2:
             all_jobs.append([InlineKeyboardButton(
-                text=JOBS[jobs_count][2:] + ' ' + db.get_cnt_of_kd_job_id(JOBS[jobs_count][0], cafe_id),
-                callback_data=JOBS[jobs_count]),
+                text=JOBS[cafe_id][jobs_count][2:] + ' ' + db.get_cnt_of_kd_job_id(JOBS[cafe_id][jobs_count][0],
+                                                                                   cafe_id),
+                callback_data=JOBS[cafe_id][jobs_count]),
                 InlineKeyboardButton(
-                    text=JOBS[jobs_count + 1][2:] + ' ' + db.get_cnt_of_kd_job_id(JOBS[jobs_count + 1][0],
-                                                                                  cafe_id),
-                    callback_data=JOBS[jobs_count + 1])])
+                    text=JOBS[cafe_id][jobs_count + 1][2:] + ' ' + db.get_cnt_of_kd_job_id(
+                        JOBS[cafe_id][jobs_count + 1][0],
+                        cafe_id),
+                    callback_data=JOBS[cafe_id][jobs_count + 1])])
             jobs_count += 2
         else:
             all_jobs.append([InlineKeyboardButton(
-                text=JOBS[jobs_count][2:] + ' ' + db.get_cnt_of_kd_job_id(JOBS[jobs_count][0], cafe_id),
-                callback_data=JOBS[jobs_count])])
+                text=JOBS[cafe_id][jobs_count][2:] + ' ' + db.get_cnt_of_kd_job_id(JOBS[cafe_id][jobs_count][0],
+                                                                                   cafe_id),
+                callback_data=JOBS[cafe_id][jobs_count])])
             jobs_count += 1
     return InlineKeyboardMarkup(inline_keyboard=all_jobs)
 
 
-def create_job_id_btns_register():
+def create_job_id_btns_register(cafe_id):
     """Создаёт кнопки должностей для регистрации"""
     all_jobs = []
     jobs_count = 0
-    while jobs_count < len(JOBS):
-        if len(JOBS) - jobs_count >= 2:
-            all_jobs.append([InlineKeyboardButton(text=JOBS[jobs_count][2:], callback_data=JOBS[jobs_count]),
-                             InlineKeyboardButton(text=JOBS[jobs_count + 1][2:], callback_data=JOBS[jobs_count + 1])])
+    print(type(cafe_id))
+    cafe_id = int(cafe_id)
+    while jobs_count < len(JOBS[cafe_id]):
+        if len(JOBS[cafe_id]) - jobs_count >= 2:
+            all_jobs.append(
+                [InlineKeyboardButton(text=JOBS[cafe_id][jobs_count][2:], callback_data=JOBS[cafe_id][jobs_count]),
+                 InlineKeyboardButton(text=JOBS[cafe_id][jobs_count + 1][2:],
+                                      callback_data=JOBS[cafe_id][jobs_count + 1])])
             jobs_count += 2
         else:
-            all_jobs.append([InlineKeyboardButton(text=JOBS[jobs_count][2:], callback_data=JOBS[jobs_count])])
+            all_jobs.append(
+                [InlineKeyboardButton(text=JOBS[cafe_id][jobs_count][2:], callback_data=JOBS[cafe_id][jobs_count])])
             jobs_count += 1
     return InlineKeyboardMarkup(inline_keyboard=all_jobs)
 
@@ -382,7 +392,7 @@ admin_btns = InlineKeyboardMarkup(inline_keyboard=[
      InlineKeyboardButton(text='📄 Список БЗ', callback_data='list_of_kd')],
     [InlineKeyboardButton(text='🔎 Поиск БЗ ️', callback_data='find_admin_kd'),
      InlineKeyboardButton(text='🎚️ В юзер', callback_data='admin_to_user')],
-    [InlineKeyboardButton(text= "🙋‍♂️ Хотелки", callback_data='show_all_wants')]
+    [InlineKeyboardButton(text="🙋‍♂️ Хотелки", callback_data='show_all_wants')]
 ])
 
 """Клавиатура для редактирования"""

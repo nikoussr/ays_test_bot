@@ -109,7 +109,10 @@ async def choose_user_update(callback: CallbackQuery, state: FSMContext):
     await bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id,
                                         reply_markup=None)
     if callback.data == 'change_job_id':
-        keyboard = kb.create_job_id_btns_register()
+        data = await state.get_data()
+        user_id = data["wait_user_info"]
+        cafe_id = db.get_cafe_id(user_id)
+        keyboard = kb.create_job_id_btns_register(cafe_id)
         await callback.message.answer(f"На какую должность перевести сотрудника?", reply_markup=keyboard)
         await state.set_state(admin.wait_for_change_job_id)
 
@@ -286,11 +289,9 @@ async def set_cafe_id(callback: CallbackQuery, state: FSMContext):
         await state.set_state(admin.wait_for_job_id_1)
 
 
-@router.callback_query(
-    lambda q: q.data in JOBS, admin.wait_for_job_id_1)
+@router.callback_query(admin.wait_for_job_id_1)
 async def set_job_id(callback: CallbackQuery, state: FSMContext):
     print("Создаёт БЗ, выбор должности")
-
     job_id = callback.data.split('_')  # приходит в формате "1_Менеджер"
     data = await state.get_data()
     cafe_id = data["wait_for_cafe_id"]
@@ -448,7 +449,7 @@ async def list_of_cafes(callback: CallbackQuery, state: FSMContext):
         await state.set_state(admin.wait_for_click_kd_3)
 
 
-@router.callback_query(lambda q: q.data in JOBS, admin.wait_for_click_kd_3)
+@router.callback_query(admin.wait_for_click_kd_3)
 async def list_of_jobs(callback: CallbackQuery, state: FSMContext):
     print("Смотрит БЗ, выбирает должность")
     data = await state.get_data()
