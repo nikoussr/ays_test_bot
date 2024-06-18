@@ -138,6 +138,7 @@ def make_kd_kb_admin(job_id, cafe_id, folder_id):
             all_bases.append([InlineKeyboardButton(text=kd[0], callback_data=str(kd[1]) + '_' + kd[0][:30])])
     return InlineKeyboardMarkup(inline_keyboard=all_bases)
 
+
 def make_kd_kb_base_ids(base_ids):
     all_bases = []
     kd_names = []
@@ -205,6 +206,7 @@ def create_folders_btn_look(all_folders):
         folders.append([InlineKeyboardButton(text='⏪ Выйти', callback_data='exit_user')])
         return InlineKeyboardMarkup(inline_keyboard=folders)
 
+
 def create_folders_btn_look_admin(all_folders):
     """Просмотр БЗ"""
     folders = []
@@ -227,6 +229,7 @@ def create_folders_btn_look_admin(all_folders):
                                                          all_folders[folders_count][1]))])
                 folders_count += 1
         return InlineKeyboardMarkup(inline_keyboard=folders)
+
 
 """Клавиатура с товарами"""
 
@@ -378,8 +381,9 @@ admin_btns = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='✍ Создать БЗ', callback_data='make_a_chapter'),
      InlineKeyboardButton(text='📄 Список БЗ', callback_data='list_of_kd')],
     [InlineKeyboardButton(text='🔎 Поиск БЗ ️', callback_data='find_admin_kd'),
-     InlineKeyboardButton(text='🎚️ В юзер', callback_data='admin_to_user'),
-      ]])
+     InlineKeyboardButton(text='🎚️ В юзер', callback_data='admin_to_user')],
+    [InlineKeyboardButton(text= "🙋‍♂️ Хотелки", callback_data='show_all_wants')]
+])
 
 """Клавиатура для редактирования"""
 edit_btns = InlineKeyboardMarkup(inline_keyboard=[
@@ -403,16 +407,17 @@ back_user_btns = InlineKeyboardMarkup(inline_keyboard=[
 ])
 
 back_exit_user_btns = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='↩ Назад', callback_data='back_user'), InlineKeyboardButton(text='⏪ Выйти', callback_data='exit_userr')
-]
+    [InlineKeyboardButton(text='↩ Назад', callback_data='back_user'),
+     InlineKeyboardButton(text='⏪ Выйти', callback_data='exit_userr')
+     ]
 ])
-
 
 """Клавиатура для сотрудника"""
 user_btns = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='🔎 Поиск БЗ ️', callback_data='find_user_kd'),
      InlineKeyboardButton(text='📄 Список БЗ ️', callback_data='open_user_kd')],
-    [InlineKeyboardButton(text='👨‍💻 Написать разработчику', callback_data='kick_me')]
+    [InlineKeyboardButton(text='🙋‍♂️ Хочу..', callback_data='want_to'),
+     InlineKeyboardButton(text='👨‍💻 Написать разработчику', callback_data='kick_me')]
 ])
 
 """Клавиатура для менеджера"""
@@ -420,6 +425,7 @@ user_manager_btns = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='🔎 Поиск БЗ ️', callback_data='find_user_kd'),
      InlineKeyboardButton(text='📄 Список БЗ ️', callback_data='open_user_kd')],
     [InlineKeyboardButton(text="🛒 Закуп", callback_data="order"),
+     InlineKeyboardButton(text='🙋‍♂️ Хочу..', callback_data='want_to'),
      InlineKeyboardButton(text='👨‍💻 Написать разработчику', callback_data='kick_me')]
 ])
 

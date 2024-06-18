@@ -69,3 +69,5 @@ class user(StatesGroup):
     wait_for_confirm_delete = State()
     wait_for_create_order = State()
     wait_for_print_order = State()
+    """Хочу.."""
+    wait_for_want_to = State()

@@ -1,6 +1,8 @@
 import aiogram.exceptions
+from openpyxl import Workbook
 from aiogram.types import Message, CallbackQuery, InputMediaPhoto, InputMediaDocument, \
-    InlineKeyboardButton
+    InlineKeyboardButton, FSInputFile
+from aiogram.filters import Command
 from aiogram import Router
 import app.keyboards as kb
 from states.states import admin, user
@@ -55,6 +57,10 @@ async def admin_panel(callback: CallbackQuery, state: FSMContext):
         await callback.message.answer(
             f"Добро пожаловать в юзер-панель, {db.get_first_name(user_id)} {db.get_last_name(user_id)}!",
             reply_markup=kb.user_manager_btns if db.get_job_id(user_id) == 1 else kb.user_btns)
+    elif callback.data == "show_all_wants":
+        all_wants = db.get_all_wants()
+        for want in all_wants:
+            await callback.message.answer(f"📩 Новое сообщение от {want[1]}:`\n{want[2]}`\nЧтобы ответить, введите `/reply {want[0]} ОТВЕТ`", parse_mode='Markdown')
 
 
 """Поиск инфы по сотруднику"""
@@ -148,7 +154,7 @@ async def choose_user_update(callback: CallbackQuery, state: FSMContext):
                     db.set_banned_user(delete_user_id)
                     db.delete_user(delete_user_id)
                     await bot.edit_message_text(f"Сотрудник удалён", chat_id=callback.message.chat.id,
-                                        message_id=callback.message.message_id)
+                                                message_id=callback.message.message_id)
                     user_id = callback.from_user.id
                     await callback.message.answer(
                         f"Добро пожаловать в админ-панель, {db.get_first_name(user_id)} {db.get_last_name(user_id)}!",
@@ -670,6 +676,18 @@ async def find_kd(message: Message, state: FSMContext):
         await state.set_state(admin.wait_for_click_kd_5)
     else:
         await message.answer(f"Ничего не найдено", reply_markup=kb.exit_btns)
+
+
+@router.message(Command("reply"))
+async def want_reply(message:Message, state:FSMContext):
+    data = message.text.split(' ')
+    want_id = data[1]
+    user_id = db.get_want_user_id(want_id)
+    want_text = data[2:]
+    want_text = ' '.join(want_text)
+    await bot.send_message(chat_id=user_id, text=f"📩 Ответ на ваш вопрос:\n{want_text}")
+    db.set_wants_is_answered(want_id)
+
 
 
 """Выход"""

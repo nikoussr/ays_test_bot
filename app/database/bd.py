@@ -337,3 +337,34 @@ class Database:
         with self.connection:
             return self.cursor.execute(
                 "SELECT user_id FROM banned").fetchall()
+
+
+    """Хочу.."""
+    def set_want(self, cafe_id, want_text, user_id):
+        with self.connection:
+            return self.connection.execute(
+                "INSERT INTO wants (cafe_id, want_text, user_id) VALUES (?,?, ?)", (cafe_id, want_text, user_id)
+            )
+
+    def get_all_wants(self):
+        with self.connection:
+            return self.cursor.execute(
+                "SELECT id, cafe_name, want_text, date, is_answered, user_id FROM wants LEFT JOIN cafes ON wants.cafe_id = cafes.cafe_id WHERE is_answered = ?", (0,)
+            ).fetchall()
+    def get_want_id(self):
+        with self.connection:
+            return self.cursor.execute(
+                "SELECT MAX(id) FROM wants"
+            ).fetchall()[0][0]
+
+    def get_want_user_id(self, want_id):
+        with self.connection:
+            return self.cursor.execute(
+                "SELECT user_id FROM wants WHERE id = ?", (want_id,)).fetchall()[0][0]
+    def set_wants_is_answered(self, want_id):
+        with self.connection:
+            return self.cursor.execute(
+                "UPDATE wants SET is_answered = ? WHERE id = ?", (1, want_id,)
+            )
+
+

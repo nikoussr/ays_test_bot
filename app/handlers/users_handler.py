@@ -1,6 +1,8 @@
 from aiogram.types import Message, CallbackQuery, InputMediaPhoto, InputMediaDocument
 from aiogram import Router
+from aiogram.filters import Command
 import app.keyboards as kb
+import configs
 from states.states import user
 from aiogram.fsm.context import FSMContext
 from app.database.bd import Database
@@ -41,6 +43,10 @@ async def user_panel(callback: CallbackQuery, state: FSMContext):
             "Здравствуйте! Если у вас есть какие-либо вопросы, предложения или Вы нашли баги, пожалуйста, напишите мне.\nЯ всегда готов помочь и выслушать Ваше мнение. Спасибо!",
             reply_markup=kb.exit_user_btns)
         await state.set_state(user.wait_for_user_message)
+    # Хочу..
+    elif callback.data == 'want_to':
+        await callback.message.edit_text(f"Здесь ты можешь написать о своём пожелании", reply_markup=kb.exit_user_btns)
+        await state.set_state(user.wait_for_want_to)
 
 
 """Поиск БЗ"""
@@ -419,6 +425,34 @@ async def send(message: Message, state: FSMContext):
     from main import bot
     await bot.send_message(695088267, f"Сообщение от {message.from_user.full_name}:\n{message.text}")
     await state.set_state(user.wait_for_exit)
+
+
+"""Хочу.."""
+
+
+@router.message(user.wait_for_want_to)
+async def want_to(message: Message, state: FSMContext):
+    from main import bot
+    await bot.edit_message_reply_markup(chat_id=message.from_user.id, message_id=message.message_id-1, reply_markup = None)
+    want_text = message.text
+    await message.answer(f"Сохранить пожелание?", reply_markup=kb.y_n_btns)
+
+    @router.callback_query(user.wait_for_want_to)
+    async def y_n_want_to(callback: CallbackQuery, state: FSMContext):
+        if callback.data == 'yes':
+            user_id = message.from_user.id
+            cafe_id = db.get_cafe_id(user_id)
+            db.set_want(cafe_id, want_text, user_id)
+            want_id = db.get_want_id()
+            from main import bot
+            await bot.send_message(chat_id=695088267, text=f"📩 Новое сообщение от {configs.CAFES[cafe_id][2:]}:\n{want_text}\nЧтобы ответить нажмите `/reply {want_id} ОТВЕТ`", parse_mode='Markdown')
+        await state.clear()
+        await state.set_state(user.wait_user)
+        await callback.message.delete(inline_message_id=callback.inline_message_id)
+        user_id = callback.from_user.id
+        await callback.message.answer(
+            f"Добро пожаловать в юзер-панель, {db.get_first_name(user_id)} {db.get_last_name(user_id)}!",
+            reply_markup=kb.user_manager_btns if db.get_job_id(user_id) == 1 else kb.user_btns)
 
 
 @router.callback_query(user.wait_for_exit)
