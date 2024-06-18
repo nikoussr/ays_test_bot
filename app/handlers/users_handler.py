@@ -445,6 +445,7 @@ async def want_to(message: Message, state: FSMContext):
             want_id = db.get_want_id()
             from main import bot
             await bot.send_message(chat_id=695088267, text=f"📩 Новое сообщение от {configs.CAFES[cafe_id-1][2:]}:\n{want_text}\nЧтобы ответить нажмите `/reply {want_id} ОТВЕТ`", parse_mode='Markdown')
+            await bot.send_message(chat_id=637403771, text=f"📩 Новое сообщение от {configs.CAFES[cafe_id-1][2:]}:\n{want_text}\nЧтобы ответить нажмите `/reply {want_id} ОТВЕТ`", parse_mode='Markdown')
         await state.clear()
         await state.set_state(user.wait_user)
         await callback.message.delete(inline_message_id=callback.inline_message_id)

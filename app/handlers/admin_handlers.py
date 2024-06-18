@@ -62,7 +62,7 @@ async def admin_panel(callback: CallbackQuery, state: FSMContext):
             await callback.message.answer(f"Хотелок нет.", reply_markup=kb.exit_btns)
         else:
             for want in all_wants:
-                await callback.message.answer(f"📩 Новое сообщение от {want[1]}:`\n{want[2]}`\nЧтобы ответить, введите `/reply {want[0]} ОТВЕТ`", parse_mode='Markdown')
+                await callback.message.answer(f"📩 Новое сообщение от {want[1]}:\n{want[2]}\nЧтобы ответить, введите `/reply {want[0]} ОТВЕТ`", parse_mode='Markdown')
 
 
 """Поиск инфы по сотруднику"""
