@@ -58,8 +58,11 @@ async def admin_panel(callback: CallbackQuery, state: FSMContext):
             reply_markup=kb.user_manager_btns if db.get_job_id(user_id) == 1 else kb.user_btns)
     elif callback.data == "show_all_wants":
         all_wants = db.get_all_wants()
-        for want in all_wants:
-            await callback.message.answer(f"📩 Новое сообщение от {want[1]}:`\n{want[2]}`\nЧтобы ответить, введите `/reply {want[0]} ОТВЕТ`", parse_mode='Markdown')
+        if len(all_wants) == 0:
+            await callback.message.answer(f"Хотелок нет.", reply_markup=kb.exit_btns)
+        else:
+            for want in all_wants:
+                await callback.message.answer(f"📩 Новое сообщение от {want[1]}:`\n{want[2]}`\nЧтобы ответить, введите `/reply {want[0]} ОТВЕТ`", parse_mode='Markdown')
 
 
 """Поиск инфы по сотруднику"""
@@ -678,7 +681,7 @@ async def find_kd(message: Message, state: FSMContext):
 
 
 @router.message(Command("reply"))
-async def want_reply(message:Message, state:FSMContext):
+async def want_reply(message:Message):
     data = message.text.split(' ')
     want_id = data[1]
     user_id = db.get_want_user_id(want_id)
