@@ -372,5 +372,8 @@ class Database:
             return self.cursor.execute(
                 "UPDATE wants SET is_answered = ? WHERE id = ?", (1, want_id,)
             )
-
+    def get_want_date(self, want_id):
+        with self.connection:
+            return self.cursor.execute(
+                "SELECT date FROM wants WHERE id = ?", (want_id,)).fetchall()[0][0]
 

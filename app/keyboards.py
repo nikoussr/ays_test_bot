@@ -38,7 +38,6 @@ def create_job_id_btns_register(cafe_id):
     """Создаёт кнопки должностей для регистрации"""
     all_jobs = []
     jobs_count = 0
-    print(type(cafe_id))
     cafe_id = int(cafe_id)
     while jobs_count < len(JOBS[cafe_id]):
         if len(JOBS[cafe_id]) - jobs_count >= 2:

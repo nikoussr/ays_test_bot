@@ -71,13 +71,11 @@ async def cafes(callback: CallbackQuery, state: FSMContext):
     if callback.message.text != "/start":
         db.set_cafe_id(callback.from_user.id, callback.data[0])
         await callback.message.edit_text("Место работы выбрано", reply_markup=None)
-        await callback.message.answer(f"Кем вы работаете?", reply_markup=kb.create_job_id_btns_register())
+        await callback.message.answer(f"Кем вы работаете?", reply_markup=kb.create_job_id_btns_register(callback.data[0]))
         await state.set_state(register.wait_job_id)
 
 
-@router.callback_query(
-    lambda q: q.data in JOBS,
-    register.wait_job_id)
+@router.callback_query(register.wait_job_id)
 async def jobs(callback: CallbackQuery, state: FSMContext):
     db.set_job_id(callback.from_user.id, callback.data[0])
     await callback.message.edit_text("Должность выбрана", reply_markup=None)

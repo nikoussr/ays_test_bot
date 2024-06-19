@@ -30,7 +30,7 @@ async def admin_panel(callback: CallbackQuery, state: FSMContext):
     elif callback.data == 'user_data':
         keyboard = kb.create_cafe_id_people_btns()
         keyboard.inline_keyboard.append([InlineKeyboardButton(text='⏪ Выйти', callback_data='exit')])
-        await callback.message.edit_text("Поиск сотрудника\nВыберите заведение", reply_markup=keyboard)
+        await callback.message.edit_text("Сотрудники\nВыберите заведение", reply_markup=keyboard)
         await state.set_state(admin.wait_user_FL)
 
     elif callback.data == 'make_a_chapter':
@@ -62,7 +62,7 @@ async def admin_panel(callback: CallbackQuery, state: FSMContext):
             await callback.message.answer(f"Хотелок нет.", reply_markup=kb.exit_btns)
         else:
             for want in all_wants:
-                await callback.message.answer(f"📩 Новое сообщение от {want[1]}:\n{want[2]}\nЧтобы ответить, введите `/reply {want[0]} ОТВЕТ`", parse_mode='Markdown')
+                await callback.message.answer(f"📩 Новое сообщение от {want[1]}:\n{want[2]}\n📆 Дата обращения: \n{db.get_want_date(want_id=want[0])}\nЧтобы ответить, введите `/reply {want[0]} ОТВЕТ`", parse_mode='Markdown')
 
 
 """Поиск инфы по сотруднику"""
@@ -689,7 +689,11 @@ async def want_reply(message:Message):
     want_answer_text = data[2:]
     want_answer_text = ' '.join(want_answer_text)
     want_text = db.get_want_text(want_id)
-    await bot.send_message(chat_id=user_id, text=f"📩 Пришел ответ на вашу хотелку.\nХотелка: {want_text}\nОтвет: {want_answer_text}")
+    try:
+        await bot.send_message(chat_id=user_id, text=f"📩 Пришел ответ на вашу хотелку.\nХотелка: {want_text}\nОтвет: {want_answer_text}")
+        await message.answer(f"Ответ был отправлен успешно!", reply_markup=kb.exit_btns)
+    except:
+        await message.answer(f"Не удалось отправить ответ", reply_markup=kb.exit_btns)
     db.set_wants_is_answered(want_id)
 
 """Выход"""
